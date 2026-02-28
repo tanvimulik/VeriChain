@@ -2,8 +2,8 @@ const mongoose = require('mongoose');
 
 const connectDB = async () => {
   try {
-    // MongoDB Atlas connection
-    const mongoURI = 'mongodb+srv://inrane2019_db_user:F4riI9E7mNE1ujoC@cluster0.oxadyuv.mongodb.net/farmconnect?retryWrites=true&w=majority&appName=Cluster0';
+    // MongoDB connection from environment variable
+    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/farmconnect';
     
     await mongoose.connect(mongoURI, {
       useNewUrlParser: true,

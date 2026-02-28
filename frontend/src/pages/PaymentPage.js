@@ -133,7 +133,8 @@ function PaymentPage() {
 
       // Razorpay options
       const options = {
-        key: 'rzp_test_1DP5mmOlF5G5ag', // Test Key
+       key: 'rzp_test_RFyGMA5aBLFtc3', // Your Test Key
+ // Test Key
         amount: amount,
         currency: currency,
         name: 'FarmConnect',

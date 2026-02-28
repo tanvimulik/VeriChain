@@ -82,13 +82,13 @@ exports.deleteCrop = async (req, res) => {
 exports.getIncomingOrders = async (req, res) => {
   try {
     const orders = await Order.find({ 
-      farmerId: req.user.id,
-      requestStatus: 'pending_farmer_approval'
-    })
-      .populate('buyerId', 'businessName phone rating deliveryAddress')
-      .populate('cropId', 'cropName category quantity unit pricePerUnit')
-      .populate('selectedFPO', 'name location address')
-      .sort({ createdAt: -1 });
+  farmerId: req.user.id,
+  requestStatus: 'pending_farmer_approval'
+})
+  .populate('buyerId', 'businessName phone rating deliveryAddress')
+  .populate('cropId', 'cropName category quantity unit pricePerUnit')
+  .sort({ createdAt: -1 });
+
 
     res.json({ success: true, data: orders });
   } catch (error) {

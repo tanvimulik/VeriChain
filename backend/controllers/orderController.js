@@ -107,7 +107,7 @@ exports.acceptOrderRequest = async (req, res) => {
     }
 
     // Update order status
-    order.requestStatus = 'farmer_accepted';
+    order.requestStatus = 'accepted';
     order.orderStatus = 'payment_pending';
     order.farmerResponseMessage = responseMessage || 'Order accepted';
     order.farmerResponseDate = new Date();
@@ -205,7 +205,6 @@ exports.getBuyerPendingRequests = async (req, res) => {
     })
       .populate('farmerId')
       .populate('cropId')
-      .populate('selectedFPO')
       .sort({ createdAt: -1 });
     
     res.json({ success: true, data: orders });
@@ -220,12 +219,11 @@ exports.getBuyerAcceptedOrders = async (req, res) => {
     const buyerId = req.user.id;
     const orders = await Order.find({ 
       buyerId,
-      requestStatus: 'farmer_accepted',
+      requestStatus: 'accepted',
       paymentStatus: 'pending'
     })
       .populate('farmerId')
       .populate('cropId')
-      .populate('selectedFPO')
       .sort({ farmerResponseDate: -1 });
     
     res.json({ success: true, data: orders });
@@ -241,8 +239,7 @@ exports.getBuyerOrders = async (req, res) => {
     const orders = await Order.find({ buyerId })
       .populate('farmerId')
       .populate('cropId')
-      .populate('truckAssignedId')
-      .populate('selectedFPO')
+      .populate('assignedTruckId')
       .sort({ createdAt: -1 });
     res.json({ success: true, data: orders });
   } catch (error) {
@@ -257,7 +254,7 @@ exports.getFarmerOrders = async (req, res) => {
     const orders = await Order.find({ farmerId })
       .populate('buyerId')
       .populate('cropId')
-      .populate('truckAssignedId');
+      .populate('assignedTruckId');
     res.json({ orders });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -318,8 +315,8 @@ exports.getOrderDetails = async (req, res) => {
       .populate('buyerId')
       .populate('farmerId')
       .populate('cropId')
-      .populate('truckAssignedId')
-      .populate('fpoStorageId');
+      .populate('assignedTruckId')
+     
 
     console.log('Found by _id:', order ? 'YES' : 'NO');
     if (order) {
@@ -339,8 +336,8 @@ exports.getOrderDetails = async (req, res) => {
         .populate('buyerId')
         .populate('farmerId')
         .populate('cropId')
-        .populate('truckAssignedId')
-        .populate('fpoStorageId');
+        .populate('assignedTruckId')
+       
       
       console.log('Found by orderId string:', order ? 'YES' : 'NO');
     }

@@ -33,7 +33,20 @@ exports.registerFarmer = async (req, res) => {
     });
 
     await farmer.save();
-    res.status(201).json({ message: 'Farmer registered successfully', farmer });
+    
+    // Generate token
+    const token = jwt.sign({ id: farmer._id, role: 'farmer' }, JWT_SECRET, { expiresIn: '7d' });
+    
+    res.status(201).json({ 
+      message: 'Farmer registered successfully', 
+      token,
+      farmer: {
+        id: farmer._id,
+        fullName: farmer.fullName,
+        phone: farmer.phone,
+        village: farmer.village
+      }
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -86,7 +99,20 @@ exports.registerBuyer = async (req, res) => {
     });
 
     await buyer.save();
-    res.status(201).json({ message: 'Buyer registered successfully', buyer });
+    
+    // Generate token
+    const token = jwt.sign({ id: buyer._id, role: 'buyer' }, JWT_SECRET, { expiresIn: '7d' });
+    
+    res.status(201).json({ 
+      message: 'Buyer registered successfully', 
+      token,
+      buyer: {
+        id: buyer._id,
+        businessName: buyer.businessName,
+        phone: buyer.phone,
+        city: buyer.city
+      }
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -136,7 +162,19 @@ exports.registerLogistics = async (req, res) => {
     });
 
     await logisticsOrg.save();
-    res.status(201).json({ message: 'Logistics organization registered successfully', logisticsOrg });
+    
+    // Generate token
+    const token = jwt.sign({ id: logisticsOrg._id, role: 'logistics' }, JWT_SECRET, { expiresIn: '7d' });
+    
+    res.status(201).json({ 
+      message: 'Logistics organization registered successfully', 
+      token,
+      logisticsOrg: {
+        id: logisticsOrg._id,
+        organizationName: logisticsOrg.organizationName,
+        phone: logisticsOrg.phone
+      }
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

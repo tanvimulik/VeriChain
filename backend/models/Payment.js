@@ -22,11 +22,12 @@ const PaymentSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    paymentMethod: {
-      type: String,
-      enum: ['UPI', 'Bank Transfer', 'Cash', 'Card'],
-      default: 'UPI',
-    },
+   paymentMethod: {
+  type: String,
+  required: true
+  // Remove enum restriction entirely to allow any payment method
+},
+
     transactionId: String,
     status: {
       type: String,

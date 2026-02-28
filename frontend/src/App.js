@@ -50,6 +50,8 @@ import ChatWindow from './pages/ChatWindow';
 // Truck Pages
 import TruckRegister from './pages/TruckRegister';
 import TruckLogin from './pages/TruckLogin';
+import TruckDashboard from './pages/TruckDashboard';
+
 
 function App() {
   return (
@@ -61,6 +63,8 @@ function App() {
         {/* Authentication */}
         <Route path="/login/farmer" element={<FarmerLogin />} />
         <Route path="/login/buyer" element={<BuyerLogin />} />
+        <Route path="/truck-dashboard" element={<TruckDashboard />} />
+
         <Route path="/login/logistics" element={<LogisticsLogin />} />
         <Route path="/login/truck" element={<TruckLogin />} />
         <Route path="/login/admin" element={<AdminLogin />} />
