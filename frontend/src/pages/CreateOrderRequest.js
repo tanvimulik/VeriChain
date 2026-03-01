@@ -14,7 +14,11 @@ function CreateOrderRequest() {
     quantity: '',
     deliveryAddress: '',
     buyerNotes: '',
+    latitude: '',
+    longitude: '',
   });
+  
+  const [fetchingLocation, setFetchingLocation] = useState(false);
   
   const [priceBreakdown, setPriceBreakdown] = useState({
     cropCost: 0,
@@ -40,7 +44,27 @@ function CreateOrderRequest() {
       }
     };
 
+    const fetchBuyerProfile = async () => {
+      try {
+        const response = await api.get('/buyer/profile');
+        const buyer = response.data.data;
+        
+        // Auto-fill buyer's registered GPS location
+        if (buyer.gpsLocation && buyer.gpsLocation.latitude && buyer.gpsLocation.longitude) {
+          setFormData(prev => ({
+            ...prev,
+            latitude: buyer.gpsLocation.latitude.toString(),
+            longitude: buyer.gpsLocation.longitude.toString(),
+            deliveryAddress: buyer.deliveryAddress || '',
+          }));
+        }
+      } catch (error) {
+        console.error('Error fetching buyer profile:', error);
+      }
+    };
+
     fetchCropDetails();
+    fetchBuyerProfile();
   }, [cropId, navigate]);
 
   useEffect(() => {
@@ -64,6 +88,31 @@ function CreateOrderRequest() {
     calculatePricing();
   }, [formData.quantity, crop]);
 
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by your browser');
+      return;
+    }
+
+    setFetchingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setFormData({
+          ...formData,
+          latitude: position.coords.latitude.toString(),
+          longitude: position.coords.longitude.toString(),
+        });
+        setFetchingLocation(false);
+        alert('Location captured successfully!');
+      },
+      (error) => {
+        setFetchingLocation(false);
+        alert('Unable to get location. Please try again.');
+        console.error('Location error:', error);
+      }
+    );
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -72,15 +121,30 @@ function CreateOrderRequest() {
       return;
     }
     
+    // GPS location is optional - use registered location if not updated
+    const deliveryCoords = formData.latitude && formData.longitude 
+      ? {
+          latitude: parseFloat(formData.latitude),
+          longitude: parseFloat(formData.longitude),
+        }
+      : null;
+    
     setSubmitting(true);
     try {
-      const response = await api.post('/orders/request', {
+      const orderData = {
         cropId: crop._id,
         quantity: parseFloat(formData.quantity),
         deliveryType: 'direct',
         deliveryAddress: formData.deliveryAddress,
         buyerNotes: formData.buyerNotes,
-      });
+      };
+
+      // Only add coordinates if they exist
+      if (deliveryCoords) {
+        orderData.deliveryCoordinates = deliveryCoords;
+      }
+
+      const response = await api.post('/orders/request', orderData);
       
       alert('Order request sent successfully! Waiting for farmer approval.');
       navigate('/buyer/pending-requests');
@@ -200,6 +264,61 @@ function CreateOrderRequest() {
                     />
                     <span className="field-hint">
                       📍 Provide complete address with pincode
+                    </span>
+                  </div>
+
+                  <div className="form-field">
+                    <label className="field-label">
+                      GPS Location (Optional)
+                    </label>
+                    {formData.latitude && formData.longitude ? (
+                      <div style={{
+                        padding: '12px 20px',
+                        backgroundColor: '#e8f5e9',
+                        border: '2px solid #4CAF50',
+                        borderRadius: '8px',
+                        marginBottom: '8px',
+                      }}>
+                        <p style={{ margin: 0, color: '#2e7d32', fontWeight: '500' }}>
+                          ✅ Using your registered location
+                        </p>
+                        <p style={{ margin: '5px 0 0 0', fontSize: '14px', color: '#666' }}>
+                          📍 {parseFloat(formData.latitude).toFixed(4)}, {parseFloat(formData.longitude).toFixed(4)}
+                        </p>
+                      </div>
+                    ) : (
+                      <div style={{
+                        padding: '12px 20px',
+                        backgroundColor: '#fff3e0',
+                        border: '2px solid #ff9800',
+                        borderRadius: '8px',
+                        marginBottom: '8px',
+                      }}>
+                        <p style={{ margin: 0, color: '#e65100', fontWeight: '500' }}>
+                          ℹ️ No GPS location in profile (Optional)
+                        </p>
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleGetLocation}
+                      disabled={fetchingLocation}
+                      style={{
+                        padding: '10px 16px',
+                        backgroundColor: '#2196F3',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: fetchingLocation ? 'not-allowed' : 'pointer',
+                        width: '100%',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                      }}
+                    >
+                      {fetchingLocation ? '📍 Getting Location...' : '🔄 Update Location (Optional)'}
+                    </button>
+                    <span className="field-hint">
+                      💡 GPS location is optional. We'll use your registered location if available.
                     </span>
                   </div>
 

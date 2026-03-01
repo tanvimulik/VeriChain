@@ -37,6 +37,10 @@ const BuyerSchema = new mongoose.Schema(
       default: 'English',
       enum: ['English', 'Hindi', 'Marathi'],
     },
+    gpsLocation: {
+      latitude: Number,
+      longitude: Number,
+    },
     verificationStatus: {
       type: String,
       default: 'Pending',

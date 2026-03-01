@@ -2,17 +2,20 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import apiClient from '../utils/api';
+import { Eye, EyeOff, Loader } from 'lucide-react';
 import './AuthPages.css';
 
 function BuyerLogin() {
   const [formData, setFormData] = useState({ phone: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { t } = useTranslation();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    setError(''); // Clear error on input change
   };
 
   const handleSubmit = async (e) => {
@@ -27,54 +30,142 @@ function BuyerLogin() {
       localStorage.setItem('user', JSON.stringify(response.data.buyer));
       navigate('/buyer/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || t('login.loginFailed'));
+      setError(err.response?.data?.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div className="auth-page">
-      <div className="auth-container">
-        <div className="auth-card">
-          <h2>{t('login.buyerTitle')}</h2>
-          <p>{t('login.subtitle')}</p>
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
 
-          <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label>{t('login.phoneLabel')}</label>
+  return (
+    <div className="centered-auth-page">
+      {/* Font Awesome CDN */}
+      <link 
+        rel="stylesheet" 
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      />
+
+      {/* Main Card Container */}
+      <div className="auth-card-container">
+        {/* Left Column - Form Side */}
+        <div className="auth-form-column">
+          {/* Logo/Brand */}
+          <div className="auth-logo">
+            <h1>FarmConnect</h1>
+          </div>
+
+          {/* Header Text */}
+          <div className="auth-header">
+            <h2>Welcome back!</h2>
+            <p>Access your marketplace</p>
+          </div>
+
+          {/* Login Form */}
+          <form onSubmit={handleSubmit} className="auth-form">
+            {/* Phone Number Field */}
+            <div className="form-field">
               <input
                 type="tel"
                 name="phone"
-                placeholder={t('login.phonePlaceholder')}
+                placeholder="Phone number"
                 value={formData.phone}
                 onChange={handleChange}
                 required
+                className={`form-input ${error ? 'error' : ''}`}
+                autoComplete="tel"
               />
             </div>
 
-            <div className="form-group">
-              <label>{t('login.passwordLabel')}</label>
-              <input
-                type="password"
-                name="password"
-                placeholder={t('login.passwordPlaceholder')}
-                value={formData.password}
-                onChange={handleChange}
-                required
-              />
+            {/* Password Field */}
+            <div className="form-field">
+              <div className="password-input-wrapper">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  placeholder="Password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  className={`form-input ${error ? 'error' : ''}`}
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={togglePasswordVisibility}
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
             </div>
 
+            {/* Error Message */}
             {error && <div className="error-message">{error}</div>}
 
-            <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? t('login.loggingIn') : t('login.loginButton')}
+            {/* Submit Button */}
+            <button 
+              type="submit" 
+              className="auth-submit-btn"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Loader size={20} className="animate-spin" />
+                  Creating account...
+                </>
+              ) : (
+                'Sign in'
+              )}
             </button>
           </form>
 
-          <p className="auth-footer">
-            {t('login.notRegistered')} <Link to="/register/buyer">{t('login.registerHere')}</Link>
-          </p>
+          {/* Social Sign-up Divider */}
+          <div className="social-divider">
+            <span>or sign up with</span>
+          </div>
+
+          {/* Social Icons */}
+          <div className="social-icons">
+            <button type="button" className="social-icon google">
+              <i className="fab fa-google"></i>
+            </button>
+            <button type="button" className="social-icon facebook">
+              <i className="fab fa-facebook-f"></i>
+            </button>
+            <button type="button" className="social-icon apple">
+              <i className="fab fa-apple"></i>
+            </button>
+          </div>
+
+          {/* Terms and Conditions */}
+          <div className="terms-text">
+            By creating an account you agree to FarmConnect's{' '}
+            <a href="/terms" className="terms-link">Terms of Services</a>{' '}
+            and{' '}
+            <a href="/privacy" className="terms-link">Privacy Policy</a>.
+          </div>
+
+          {/* FarmConnect Tagline */}
+          <div className="farmconnect-tagline">
+            Connecting Farmers to Markets
+          </div>
+
+          {/* Login Link */}
+          <div className="auth-switch">
+            Have an account? <Link to="/register/buyer" className="login-link">Log in</Link>
+          </div>
+        </div>
+
+        {/* Right Column - Vector Illustration */}
+        <div className="vector-column">
+          <img 
+            src="/images/farm-illustration.jpeg" 
+            alt="FarmConnect agriculture illustration"
+            className="vector-illustration"
+          />
         </div>
       </div>
     </div>

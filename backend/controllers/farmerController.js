@@ -5,6 +5,20 @@ const StorageRequest = require('../models/StorageRequest');
 const Payment = require('../models/Payment');
 const Rating = require('../models/Rating');
 const Notification = require('../models/Notification');
+const Farmer = require('../models/Farmer');
+
+// Get Farmer Profile
+exports.getProfile = async (req, res) => {
+  try {
+    const farmer = await Farmer.findById(req.user.id).select('-password');
+    if (!farmer) {
+      return res.status(404).json({ success: false, message: 'Farmer not found' });
+    }
+    res.json({ success: true, data: farmer });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
 
 // Create/List New Crop
 exports.createCrop = async (req, res) => {
@@ -111,11 +125,21 @@ exports.acceptOrder = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Order not found or already processed' });
     }
 
+    // Use farmer's registered GPS location if pickupCoordinates not provided
+    let finalPickupCoordinates = pickupCoordinates;
+    if (!finalPickupCoordinates && req.user.gpsLocation && req.user.gpsLocation.latitude && req.user.gpsLocation.longitude) {
+      finalPickupCoordinates = {
+        latitude: req.user.gpsLocation.latitude,
+        longitude: req.user.gpsLocation.longitude
+      };
+      console.log('✅ Using farmer registered GPS location:', finalPickupCoordinates);
+    }
+
     // Update order with pickup details
     order.requestStatus = 'accepted';
     order.orderStatus = 'payment_pending';
     order.pickupAddress = pickupAddress || req.user.address;
-    order.pickupCoordinates = pickupCoordinates || null;
+    order.pickupCoordinates = finalPickupCoordinates;
     order.farmerResponseMessage = responseMessage || 'Order accepted';
     order.farmerResponseDate = new Date();
 

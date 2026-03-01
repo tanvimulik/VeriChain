@@ -167,7 +167,7 @@ function PriceComparison() {
           market: item.market,
           state: item.state,
           district: item.district,
-          minPrice: (item.minPrice / 100).toFixed(2), // Convert to per kg
+          minPrice: (item.minPrice / 100).toFixed(2),
           maxPrice: (item.maxPrice / 100).toFixed(2),
           modalPrice: (item.modalPrice / 100).toFixed(2),
           date: item.priceDate,
@@ -242,17 +242,12 @@ function PriceComparison() {
 
   const toggleAPIMode = () => {
     setUseRealAPI(!useRealAPI);
-    if (!useRealAPI) {
-      alert('Switching to real-time API data...');
-    } else {
-      alert('Switching to sample data...');
-    }
   };
 
   const getTrendIcon = (trend) => {
-    if (trend === 'up') return '📈';
-    if (trend === 'down') return '📉';
-    return '➡️';
+    if (trend === 'up') return <i className="fas fa-arrow-up"></i>;
+    if (trend === 'down') return <i className="fas fa-arrow-down"></i>;
+    return <i className="fas fa-minus"></i>;
   };
 
   const getTrendClass = (trend) => {
@@ -274,162 +269,269 @@ function PriceComparison() {
   };
 
   return (
-    <div className="dashboard-page">
-      <header className="dashboard-header">
-        <h1>{t('priceComparison.title')}</h1>
-        <div className="header-actions">
-          <button 
-            onClick={toggleAPIMode} 
-            className={useRealAPI ? 'btn-success' : 'btn-secondary'}
-            style={{ marginRight: '10px' }}
-          >
-            {useRealAPI ? t('priceComparison.realTimeAPI') : t('priceComparison.sampleData')}
-          </button>
-          <button onClick={refreshPrices} className="btn-secondary" disabled={loading}>
-            {loading ? t('priceComparison.refreshing') : t('priceComparison.refreshPrices')}
-          </button>
-          <button onClick={handleBackNavigation} className="btn-secondary">
-            {t('order.backToDashboard')}
-          </button>
+    <div className="price-comparison-page">
+      {/* Header */}
+      <header className="page-header">
+        <div className="header-content">
+          <div className="header-left">
+            <h1>
+              <i className="fas fa-chart-line"></i>
+              {t('priceComparison.title')}
+            </h1>
+            <span className={`api-badge ${useRealAPI ? 'api-live' : 'api-sample'}`}>
+              {useRealAPI ? (
+                <>
+                  <i className="fas fa-cloud"></i>
+                  Live Data
+                </>
+              ) : (
+                <>
+                  <i className="fas fa-database"></i>
+                  Sample Data
+                </>
+              )}
+            </span>
+          </div>
+          <div className="header-actions">
+            <button 
+              onClick={toggleAPIMode} 
+              className="btn-outline"
+              title={useRealAPI ? 'Switch to sample data' : 'Switch to live data'}
+            >
+              <i className={`fas ${useRealAPI ? 'fa-database' : 'fa-cloud'}`}></i>
+              {useRealAPI ? 'Sample Data' : 'Live Data'}
+            </button>
+            <button 
+              onClick={refreshPrices} 
+              className="btn-outline" 
+              disabled={loading}
+            >
+              <i className={`fas ${loading ? 'fa-spinner fa-spin' : 'fa-sync-alt'}`}></i>
+              {loading ? 'Refreshing...' : 'Refresh'}
+            </button>
+            <button onClick={handleBackNavigation} className="btn-primary">
+              <i className="fas fa-arrow-left"></i>
+              Back to Dashboard
+            </button>
+          </div>
         </div>
       </header>
 
-      <div className="dashboard-container">
-        {/* Info Banner */}
-        <div className="info-banner">
-          <div className="banner-content">
-            <h3>{t('priceComparison.infoBanner')}</h3>
-            <p>{t('priceComparison.realTimePrices')}</p>
-            <p className="last-updated">{t('priceComparison.lastUpdated')}: {new Date().toLocaleString()}</p>
-          </div>
-          <div className="banner-note">
-            <p><strong>{t('priceComparison.noteLabel')}:</strong> {t('priceComparison.pricesInQuintal')}</p>
-            <p><strong>{t('priceComparison.modalPrice')}:</strong> {t('priceComparison.mostCommonPrice')}</p>
-          </div>
-        </div>
-
-        {/* Search and Filters */}
-        <div className="price-filters">
-          <div className="search-box">
-            <input
-              type="text"
-              placeholder={t('priceComparison.searchPlaceholder')}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="search-input"
-            />
-          </div>
-
-          <div className="filter-group">
-            <label>{t('priceComparison.category')}:</label>
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-            >
-              <option value="all">{t('priceComparison.allCategories')}</option>
-              <option value="Vegetables">{t('priceComparison.vegetables')}</option>
-              <option value="Fruits">{t('priceComparison.fruits')}</option>
-              <option value="Grains">{t('priceComparison.grains')}</option>
-            </select>
+      <div className="main-content">
+        <div className="container">
+          {/* Info Banner */}
+          <div className="info-banner">
+            <div className="banner-left">
+              <h3>📍 Mandi Price Insights</h3>
+              <p>Real-time wholesale prices from APMC markets across India</p>
+              <div className="banner-stats">
+                <div className="stat">
+                  <span className="stat-value">{filteredPrices.length}</span>
+                  <span className="stat-label">Commodities</span>
+                </div>
+                <div className="stat">
+                  <span className="stat-value">10+</span>
+                  <span className="stat-label">Markets</span>
+                </div>
+                <div className="stat">
+                  <span className="stat-value">Daily</span>
+                  <span className="stat-label">Updates</span>
+                </div>
+              </div>
+            </div>
+            <div className="banner-right">
+              <div className="price-note">
+                <p><i className="fas fa-info-circle"></i> Prices are per quintal (100 kg)</p>
+                <p><i className="fas fa-star"></i> Modal price = Most common trading price</p>
+                <p className="last-updated">
+                  <i className="far fa-clock"></i> Last updated: {new Date().toLocaleDateString()}
+                </p>
+              </div>
+            </div>
           </div>
 
-          <div className="filter-group">
-            <label>{t('priceComparison.state')}:</label>
-            <select
-              value={selectedState}
-              onChange={(e) => setSelectedState(e.target.value)}
-            >
-              <option value="all">{t('priceComparison.allStates')}</option>
-              <option value="Maharashtra">{t('marketplace.maharashtra')}</option>
-              <option value="Karnataka">{t('marketplace.karnataka')}</option>
-              <option value="Gujarat">{t('marketplace.gujarat')}</option>
-            </select>
-          </div>
-        </div>
+          {/* Search and Filters */}
+          <div className="filters-section">
+            <div className="search-wrapper">
+              <i className="fas fa-search search-icon"></i>
+              <input
+                type="text"
+                placeholder="Search commodity or market..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="search-input"
+              />
+            </div>
 
-        {/* Price Cards Grid */}
-        <div className="price-grid">
-          {filteredPrices.length === 0 ? (
-            <div className="no-results">
-              <p>{t('priceComparison.noResults')}</p>
+            <div className="filter-wrapper">
+              <div className="filter-group">
+                <label>
+                  <i className="fas fa-tag"></i>
+                  Category
+                </label>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                >
+                  <option value="all">All Categories</option>
+                  <option value="Vegetables">Vegetables</option>
+                  <option value="Fruits">Fruits</option>
+                  <option value="Grains">Grains</option>
+                </select>
+              </div>
+
+              <div className="filter-group">
+                <label>
+                  <i className="fas fa-map-marker-alt"></i>
+                  State
+                </label>
+                <select
+                  value={selectedState}
+                  onChange={(e) => setSelectedState(e.target.value)}
+                >
+                  <option value="all">All States</option>
+                  <option value="Maharashtra">Maharashtra</option>
+                  <option value="Karnataka">Karnataka</option>
+                  <option value="Gujarat">Gujarat</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Results Summary */}
+          <div className="results-summary">
+            <p>
+              Showing <strong>{filteredPrices.length}</strong> commodities
+              {selectedCategory !== 'all' && ` in ${selectedCategory}`}
+              {selectedState !== 'all' && ` from ${selectedState}`}
+            </p>
+          </div>
+
+          {/* Price Cards Grid */}
+          {loading ? (
+            <div className="loading-state">
+              <i className="fas fa-spinner fa-spin fa-3x"></i>
+              <p>Fetching latest prices...</p>
+            </div>
+          ) : filteredPrices.length === 0 ? (
+            <div className="empty-state">
+              <i className="fas fa-search fa-3x"></i>
+              <h3>No results found</h3>
+              <p>Try adjusting your search or filters</p>
             </div>
           ) : (
-            filteredPrices.map((item, index) => (
-              <div key={index} className="price-card">
-                <div className="price-card-header">
-                  <h3>{item.commodity}</h3>
-                  <span className={`trend-badge ${getTrendClass(item.trend)}`}>
-                    {getTrendIcon(item.trend)} {item.change}
-                  </span>
-                </div>
+            <div className="price-grid">
+              {filteredPrices.map((item, index) => (
+                <div key={index} className="price-card">
+                  <div className="card-header">
+                    <div className="commodity-info">
+                      <h3>{item.commodity}</h3>
+                      <span className="category-chip">{item.category}</span>
+                    </div>
+                    <span className={`trend-badge ${getTrendClass(item.trend)}`}>
+                      {getTrendIcon(item.trend)} {item.change}
+                    </span>
+                  </div>
 
-                <div className="price-card-body">
                   <div className="market-info">
-                    <p className="market-name">📍 {item.market}</p>
-                    <p className="market-state">{item.state}</p>
-                    <p className="category-badge">{item.category}</p>
+                    <p className="market-name">
+                      <i className="fas fa-store"></i>
+                      {item.market}
+                    </p>
+                    <p className="market-state">
+                      <i className="fas fa-map-pin"></i>
+                      {item.state}
+                    </p>
                   </div>
 
                   <div className="price-details">
                     <div className="price-row">
-                      <span>{t('priceComparison.minPrice')}:</span>
+                      <span>Min Price</span>
                       <span className="price-value">₹{item.minPrice}</span>
                     </div>
                     <div className="price-row">
-                      <span>{t('priceComparison.maxPrice')}:</span>
+                      <span>Max Price</span>
                       <span className="price-value">₹{item.maxPrice}</span>
                     </div>
-                    <div className="price-row highlight">
-                      <span><strong>{t('priceComparison.modalPrice')}:</strong></span>
-                      <span className="price-value"><strong>₹{item.modalPrice}</strong></span>
+                    <div className="price-row modal-price">
+                      <span>
+                        <strong>Modal Price</strong>
+                      </span>
+                      <span className="price-value modal">
+                        <strong>₹{item.modalPrice}</strong>
+                      </span>
                     </div>
-                    <div className="price-row">
-                      <span className="unit-text">{t('priceComparison.per')} {item.unit}</span>
-                    </div>
+                    <div className="price-unit">per {item.unit} (100 kg)</div>
                   </div>
 
                   <div className="price-conversion">
-                    <p>≈ ₹{convertToKg(item.modalPrice)}/kg</p>
+                    <span>≈ ₹{convertToKg(item.modalPrice)}/kg</span>
                   </div>
 
-                  <div className="price-date">
-                    <small>{t('priceComparison.updated')}: {new Date(item.date).toLocaleDateString()}</small>
+                  <div className="card-footer">
+                    <div className="updated-date">
+                      <i className="far fa-calendar-alt"></i>
+                      {new Date(item.date).toLocaleDateString()}
+                    </div>
+                    {userRole === 'farmer' && (
+                      <button
+                        className="btn-primary btn-sm"
+                        onClick={() => navigate('/add-crop')}
+                      >
+                        <i className="fas fa-plus-circle"></i>
+                        List at this price
+                      </button>
+                    )}
                   </div>
                 </div>
-
-                {userRole === 'farmer' && (
-                  <div className="price-card-footer">
-                    <button
-                      className="btn-primary btn-sm"
-                      onClick={() => navigate('/add-crop')}
-                    >
-                      {t('priceComparison.listCropAtPrice')}
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))
+              ))}
+            </div>
           )}
-        </div>
 
-        {/* API Information */}
-        <div className="api-info">
-          <h3>{t('priceComparison.dataSource')}</h3>
-          <div className="api-details">
-            <p><strong>{t('priceComparison.source')}:</strong> {t('priceComparison.enamSource')}</p>
-            <p><strong>{t('priceComparison.managedBy')}:</strong> {t('priceComparison.enamManagement')}</p>
-            <p><strong>{t('priceComparison.coverage')}:</strong> {t('priceComparison.enamCoverage')}</p>
-            <p><strong>{t('priceComparison.updateFrequency')}:</strong> {t('priceComparison.enamFrequency')}</p>
-            <p><strong>{t('priceComparison.website')}:</strong> <a href="https://enam.gov.in" target="_blank" rel="noopener noreferrer">enam.gov.in</a></p>
-          </div>
-          <div className="api-note">
-            <p><strong>Note for Developers:</strong> To integrate real eNAM API:</p>
-            <ol>
-              <li>Register at <a href="https://data.gov.in" target="_blank" rel="noopener noreferrer">data.gov.in</a></li>
-              <li>Get API key for eNAM data access</li>
-              <li>Replace hardcoded data with API calls in this component</li>
-              <li>API Endpoint: <code>https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a864a43d0070</code></li>
-            </ol>
+          {/* API Information */}
+          <div className="api-info-section">
+            <div className="api-header">
+              <i className="fas fa-cloud-sun"></i>
+              <h3>Data Source Information</h3>
+            </div>
+            <div className="api-content">
+              <div className="api-details">
+                <div className="detail-item">
+                  <i className="fas fa-check-circle"></i>
+                  <div>
+                    <strong>Source:</strong> eNAM (National Agriculture Market)
+                  </div>
+                </div>
+                <div className="detail-item">
+                  <i className="fas fa-check-circle"></i>
+                  <div>
+                    <strong>Coverage:</strong> 1000+ APMC markets across India
+                  </div>
+                </div>
+                <div className="detail-item">
+                  <i className="fas fa-check-circle"></i>
+                  <div>
+                    <strong>Update Frequency:</strong> Daily
+                  </div>
+                </div>
+                <div className="detail-item">
+                  <i className="fas fa-check-circle"></i>
+                  <div>
+                    <strong>Website:</strong> 
+                    <a href="https://enam.gov.in" target="_blank" rel="noopener noreferrer">
+                      enam.gov.in
+                    </a>
+                  </div>
+                </div>
+              </div>
+              <div className="api-note">
+                <i className="fas fa-lightbulb"></i>
+                <p>
+                  <strong>For Developers:</strong> Integrate real eNAM API using 
+                  <code>https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a864a43d0070</code>
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

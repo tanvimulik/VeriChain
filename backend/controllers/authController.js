@@ -10,7 +10,7 @@ const JWT_SECRET = 'your_secret_key_here';
 // Farmer Registration
 exports.registerFarmer = async (req, res) => {
   try {
-    const { fullName, phone, aadhaar, village, farmSize, cropsGrown, password, email } = req.body;
+    const { fullName, phone, aadhaar, village, farmSize, cropsGrown, password, email, gpsLocation } = req.body;
 
     // Check if farmer already exists
     const existingFarmer = await Farmer.findOne({ phone });
@@ -30,6 +30,7 @@ exports.registerFarmer = async (req, res) => {
       cropsGrown,
       password: hashedPassword,
       email,
+      gpsLocation: gpsLocation || null,
     });
 
     await farmer.save();
@@ -44,7 +45,8 @@ exports.registerFarmer = async (req, res) => {
         id: farmer._id,
         fullName: farmer.fullName,
         phone: farmer.phone,
-        village: farmer.village
+        village: farmer.village,
+        gpsLocation: farmer.gpsLocation
       }
     });
   } catch (error) {
@@ -77,7 +79,7 @@ exports.loginFarmer = async (req, res) => {
 // Buyer Registration
 exports.registerBuyer = async (req, res) => {
   try {
-    const { businessName, businessType, phone, gst, deliveryAddress, city, state, password, email } = req.body;
+    const { businessName, businessType, phone, gst, deliveryAddress, city, state, password, email, gpsLocation } = req.body;
 
     const existingBuyer = await Buyer.findOne({ phone });
     if (existingBuyer) {
@@ -96,6 +98,7 @@ exports.registerBuyer = async (req, res) => {
       state,
       password: hashedPassword,
       email,
+      gpsLocation: gpsLocation || null,
     });
 
     await buyer.save();
@@ -110,7 +113,8 @@ exports.registerBuyer = async (req, res) => {
         id: buyer._id,
         businessName: buyer.businessName,
         phone: buyer.phone,
-        city: buyer.city
+        city: buyer.city,
+        gpsLocation: buyer.gpsLocation
       }
     });
   } catch (error) {

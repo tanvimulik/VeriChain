@@ -1,6 +1,20 @@
 const Order = require('../models/Order');
 const Crop = require('../models/Crop');
+const Buyer = require('../models/Buyer');
 const crypto = require('crypto');
+
+// Get Buyer Profile
+exports.getBuyerProfile = async (req, res) => {
+  try {
+    const buyer = await Buyer.findById(req.user.id).select('-password');
+    if (!buyer) {
+      return res.status(404).json({ success: false, message: 'Buyer not found' });
+    }
+    res.json({ success: true, data: buyer });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
 
 // Create Order Request (Buyer sends request to farmer)
 exports.createOrderRequest = async (req, res) => {
@@ -36,13 +50,23 @@ exports.createOrderRequest = async (req, res) => {
     const platformFee = Math.round((farmerPrice + transportCost) * 0.03); // 3%
     const totalAmount = farmerPrice + transportCost + platformFee;
 
+    // Use buyer's registered GPS location if deliveryCoordinates not provided
+    let finalDeliveryCoordinates = deliveryCoordinates;
+    if (!finalDeliveryCoordinates && buyer.gpsLocation && buyer.gpsLocation.latitude && buyer.gpsLocation.longitude) {
+      finalDeliveryCoordinates = {
+        latitude: buyer.gpsLocation.latitude,
+        longitude: buyer.gpsLocation.longitude
+      };
+      console.log('✅ Using buyer registered GPS location:', finalDeliveryCoordinates);
+    }
+
     const order = new Order({
       orderId,
       buyerId,
       buyerName: buyer.name,
       buyerPhone: buyer.phone,
       deliveryAddress: deliveryAddress || buyer.address,
-      deliveryCoordinates: deliveryCoordinates || null,
+      deliveryCoordinates: finalDeliveryCoordinates,
       farmerId: crop.farmerId._id,
       farmerName: crop.farmerName,
       farmerPhone: crop.farmerId.phone,

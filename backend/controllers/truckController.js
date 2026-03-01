@@ -3,6 +3,8 @@ const Cluster = require('../models/Cluster');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+const JWT_SECRET = 'your_secret_key_here'; // Same as authController
+
 // Register Truck
 exports.registerTruck = async (req, res) => {
   try {
@@ -71,7 +73,7 @@ exports.loginTruck = async (req, res) => {
     // Generate token
     const token = jwt.sign(
       { id: truck._id, role: 'truck' },
-      process.env.JWT_SECRET || 'farmconnect_secret_key',
+      JWT_SECRET,
       { expiresIn: '30d' }
     );
 
@@ -107,6 +109,81 @@ exports.getTruckProfile = async (req, res) => {
     }
 
     res.json({ success: true, data: truck });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Get Truck Details by ID (for buyers/farmers to see assigned truck)
+exports.getTruckDetails = async (req, res) => {
+  try {
+    const truck = await Truck.findById(req.params.truckId).select('-password');
+    if (!truck) {
+      return res.status(404).json({ success: false, message: 'Truck not found' });
+    }
+
+    res.json({ success: true, data: truck });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Get All Trucks (Admin/Debug endpoint)
+exports.getAllTrucks = async (req, res) => {
+  try {
+    const { status } = req.query;
+    const filter = status ? { status } : {};
+    
+    const trucks = await Truck.find(filter)
+      .select('-password')
+      .sort({ createdAt: -1 });
+
+    res.json({ 
+      success: true, 
+      count: trucks.length,
+      data: trucks 
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Update Truck Status by Phone (Debug endpoint - no auth required)
+exports.updateTruckStatusByPhone = async (req, res) => {
+  try {
+    const { phone, status, coordinates } = req.body;
+
+    if (!phone || !status) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Phone and status are required' 
+      });
+    }
+
+    const truck = await Truck.findOne({ phone });
+    if (!truck) {
+      return res.status(404).json({ success: false, message: 'Truck not found' });
+    }
+
+    truck.status = status;
+    if (coordinates) {
+      truck.coordinates = coordinates;
+    }
+
+    await truck.save();
+
+    res.json({
+      success: true,
+      message: `Truck ${truck.truckNumber} status updated to ${status}`,
+      data: {
+        id: truck._id,
+        truckNumber: truck.truckNumber,
+        fullName: truck.fullName,
+        phone: truck.phone,
+        status: truck.status,
+        coordinates: truck.coordinates,
+      },
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -218,6 +295,43 @@ exports.declineCluster = async (req, res) => {
     res.json({
       success: true,
       message: 'Cluster declined',
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Mark Pickup Status (Arrived/Loaded)
+exports.markPickupStatus = async (req, res) => {
+  try {
+    const { clusterId, pickupId, status } = req.body;
+
+    const cluster = await Cluster.findById(clusterId);
+    if (!cluster) {
+      return res.status(404).json({ success: false, message: 'Cluster not found' });
+    }
+
+    const pickup = cluster.pickups.id(pickupId);
+    if (!pickup) {
+      return res.status(404).json({ success: false, message: 'Pickup not found' });
+    }
+
+    pickup.status = status; // 'Arrived' or 'Loaded'
+    await cluster.save();
+
+    // Update truck status if needed
+    if (status === 'Loaded') {
+      const truck = await Truck.findById(req.user.id);
+      if (truck) {
+        truck.status = 'Loading';
+        await truck.save();
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Pickup marked as ${status}`,
+      data: cluster,
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

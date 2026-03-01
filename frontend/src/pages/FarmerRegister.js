@@ -14,14 +14,42 @@ function FarmerRegister() {
     cropsGrown: '',
     password: '',
     email: '',
+    latitude: '',
+    longitude: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [fetchingLocation, setFetchingLocation] = useState(false);
   const navigate = useNavigate();
   const { t } = useTranslation();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by your browser');
+      return;
+    }
+
+    setFetchingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setFormData({
+          ...formData,
+          latitude: position.coords.latitude.toString(),
+          longitude: position.coords.longitude.toString(),
+        });
+        setFetchingLocation(false);
+        alert(t('register.locationCaptured'));
+      },
+      (error) => {
+        setFetchingLocation(false);
+        alert(t('register.locationError'));
+        console.error('Location error:', error);
+      }
+    );
   };
 
   const handleSubmit = async (e) => {
@@ -33,6 +61,10 @@ function FarmerRegister() {
       const payload = {
         ...formData,
         cropsGrown: formData.cropsGrown.split(',').map(c => c.trim()),
+        gpsLocation: formData.latitude && formData.longitude ? {
+          latitude: parseFloat(formData.latitude),
+          longitude: parseFloat(formData.longitude),
+        } : null,
       };
       await apiClient.post('/auth/farmer/register', payload);
       alert(t('register.registrationSuccess'));
@@ -149,6 +181,33 @@ function FarmerRegister() {
                 onChange={handleChange}
                 required
               />
+            </div>
+
+            <div className="form-group">
+              <label>{t('register.gpsLocation')}</label>
+              <button
+                type="button"
+                className="btn-location"
+                onClick={handleGetLocation}
+                disabled={fetchingLocation}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: '#4CAF50',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                  width: '100%',
+                  marginTop: '5px'
+                }}
+              >
+                {fetchingLocation ? t('register.gettingLocation') : t('register.useCurrentLocation')}
+              </button>
+              {formData.latitude && formData.longitude && (
+                <p style={{ color: '#4CAF50', marginTop: '10px', fontSize: '14px' }}>
+                  ✅ {t('register.locationCaptured')}: {formData.latitude}, {formData.longitude}
+                </p>
+              )}
             </div>
 
             {error && <div className="error-message">{error}</div>}

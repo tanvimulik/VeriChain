@@ -1,6 +1,7 @@
 const Order = require('../models/Order');
 const Payment = require('../models/Payment');
 const Notification = require('../models/Notification');
+const { runClustering } = require('../services/clusteringService');
 
 // TEST MODE SIMULATION - No real Razorpay needed!
 // This simulates payment processing for development/testing
@@ -127,6 +128,17 @@ exports.testPayment = async (req, res) => {
       console.error('Error creating notification:', notifError.message);
     }
 
+    // 🚛 AUTO-TRIGGER CLUSTERING AFTER PAYMENT SUCCESS
+    console.log('🔄 Auto-triggering clustering for truck assignment...');
+    try {
+      const clusteringResult = await runClustering();
+      console.log('✅ Clustering completed:', clusteringResult.message);
+      console.log(`📦 Clusters created: ${clusteringResult.clustersCreated}`);
+    } catch (clusterError) {
+      console.error('⚠️ Clustering error (non-critical):', clusterError.message);
+      // Don't fail payment if clustering fails - it will run again in cron job
+    }
+
     console.log('✅ Test payment successful');
     console.log('Transaction ID:', order.transactionId);
     console.log('=================================');
@@ -200,6 +212,17 @@ exports.verifyPayment = async (req, res) => {
       console.log('✅ Farmer notification created');
     } catch (notifError) {
       console.error('Error creating notification:', notifError.message);
+    }
+
+    // 🚛 AUTO-TRIGGER CLUSTERING AFTER PAYMENT SUCCESS
+    console.log('🔄 Auto-triggering clustering for truck assignment...');
+    try {
+      const clusteringResult = await runClustering();
+      console.log('✅ Clustering completed:', clusteringResult.message);
+      console.log(`📦 Clusters created: ${clusteringResult.clustersCreated}`);
+    } catch (clusterError) {
+      console.error('⚠️ Clustering error (non-critical):', clusterError.message);
+      // Don't fail payment if clustering fails - it will run again in cron job
     }
 
     console.log('✅ Payment verified successfully');

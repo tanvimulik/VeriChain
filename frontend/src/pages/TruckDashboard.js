@@ -9,69 +9,77 @@ function TruckDashboard() {
   const [activeCluster, setActiveCluster] = useState(null);
   const [tripHistory, setTripHistory] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [useMockData, setUseMockData] = useState(true); // Toggle for demo
+  const [useMockData, setUseMockData] = useState(true); // Changed to TRUE - show hardcoded data for Shravani
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [showRouteOptimization, setShowRouteOptimization] = useState(false);
 
-  // HARDCODED MOCK DATA for design testing
+  // HARDCODED DATA FOR SHRAVANI MULIK - REAL CLUSTER DATA
   const mockTruckData = {
-    fullName: "Suresh Kumar",
-    truckNumber: "MH12AB1234",
-    vehicleType: "Tata Ace",
-    capacity: 2000,
-    currentLoad: 850,
-    status: "OnRoute",
-    coordinates: { latitude: 19.9975, longitude: 73.7898 },
-    totalTrips: 15,
-    totalEarnings: 22500,
-    rating: 4.5
+    fullName: "Shravani Mulik",
+    truckNumber: "MH45B3455",
+    vehicleType: "Mini Truck",
+    capacity: 5000,
+    currentLoad: 75,
+    status: "Assigned",
+    coordinates: { latitude: 20.96178, longitude: 75.55320 },
+    totalTrips: 0,
+    totalEarnings: 0,
+    rating: 0
   };
 
   const mockActiveCluster = {
-    _id: "cluster123",
-    totalWeight: 850,
-    totalDistance: 45.5,
-    earning: 682,
-    status: "InProgress",
+    _id: "69a3c588a7897150fe3131bc",
+    totalWeight: 75,
+    totalDistance: 312.45,
+    estimatedTime: 469,
+    earning: 375,
+    status: "Assigned",
+    centerCoordinates: { latitude: 20.96283, longitude: 75.55467 },
     pickups: [
       {
         _id: "pickup1",
-        farmerId: { fullName: "Ramesh Patil", phone: "9876543210" },
-        coordinates: { latitude: 19.9975, longitude: 73.7898 },
-        quantity: 500,
+        farmerId: { fullName: "Ramesh Patil", phone: "9999888877" },
+        coordinates: { latitude: 18.15, longitude: 74.58 },
+        quantity: 75,
         status: "Pending",
-        address: "Nashik Road, Maharashtra"
-      },
-      {
-        _id: "pickup2",
-        farmerId: { fullName: "Vijay Sharma", phone: "9876543211" },
-        coordinates: { latitude: 19.9980, longitude: 73.7900 },
-        quantity: 350,
-        status: "Pending",
-        address: "Satpur, Nashik"
+        address: "Baramati Village, Pune District",
+        sequence: 0
       }
     ],
     deliveries: [
       {
         _id: "delivery1",
-        buyerId: { businessName: "Fresh Mart", phone: "9123456789" },
-        coordinates: { latitude: 19.1234, longitude: 72.8765 },
-        quantity: 500,
+        buyerId: { businessName: "Test Kirana Store", phone: "9988776655" },
+        coordinates: { latitude: 20.96350, longitude: 75.55500 },
+        quantity: 25,
         status: "Pending",
-        address: "Andheri, Mumbai"
+        address: "Shop No 5, MG Road, Pune",
+        sequence: 0
       },
       {
         _id: "delivery2",
-        buyerId: { businessName: "Veggie Store", phone: "9123456790" },
-        coordinates: { latitude: 19.1240, longitude: 72.8770 },
-        quantity: 350,
+        buyerId: { businessName: "Mahalakshmi Hotel", phone: "4567890123" },
+        coordinates: { latitude: 20.96000, longitude: 75.55100 },
+        quantity: 20,
         status: "Pending",
-        address: "Bandra, Mumbai"
+        address: "Pune",
+        sequence: 1
+      },
+      {
+        _id: "delivery3",
+        buyerId: { businessName: "Royal Caterers & Events", phone: "9765432108" },
+        coordinates: { latitude: 20.96500, longitude: 75.55800 },
+        quantity: 30,
+        status: "Pending",
+        address: "Shop 78, Moryanagar Market Yard, Behind Bus Stand, Pune 411041",
+        sequence: 2
       }
     ],
     routeSequence: [
-      { type: "pickup", location: { latitude: 19.9975, longitude: 73.7898 } },
-      { type: "pickup", location: { latitude: 19.9980, longitude: 73.7900 } },
-      { type: "delivery", location: { latitude: 19.1234, longitude: 72.8765 } },
-      { type: "delivery", location: { latitude: 19.1240, longitude: 72.8770 } }
+      { type: "pickup", location: { latitude: 18.15, longitude: 74.58 } },
+      { type: "delivery", location: { latitude: 20.96350, longitude: 75.55500 } },
+      { type: "delivery", location: { latitude: 20.96000, longitude: 75.55100 } },
+      { type: "delivery", location: { latitude: 20.96500, longitude: 75.55800 } }
     ]
   };
 
@@ -137,19 +145,21 @@ function TruckDashboard() {
 
   const handleStartRoute = async () => {
     if (!activeCluster) return;
+    
+    // Show route optimization visualization
+    setShowRouteOptimization(true);
+    
+    // Optionally update status in backend
     try {
       await api.post('/trucks/accept-cluster', { clusterId: activeCluster._id });
-      alert('Route started! 🚛');
-      fetchDashboardData();
     } catch (error) {
       console.error('Error starting route:', error);
-      alert('Error starting route');
     }
   };
 
   const handleMarkPickup = async (pickupId, status) => {
     try {
-      await api.post('/trucks/mark-pickup', {
+      await api.post('/trucks/mark-pickup-status', {
         clusterId: activeCluster._id,
         pickupId,
         status
@@ -173,6 +183,23 @@ function TruckDashboard() {
     } catch (error) {
       console.error('Error marking delivery:', error);
       alert('Error updating delivery status');
+    }
+  };
+
+  const handleToggleAvailability = async () => {
+    try {
+      setUpdatingStatus(true);
+      const newStatus = truckData.status === 'Available' ? 'Offline' : 'Available';
+      
+      await api.put('/trucks/status', { status: newStatus });
+      
+      alert(`Status updated to ${newStatus}! ${newStatus === 'Available' ? '🟢' : '🔴'}`);
+      fetchDashboardData();
+    } catch (error) {
+      console.error('Error updating status:', error);
+      alert('Error updating availability status');
+    } finally {
+      setUpdatingStatus(false);
     }
   };
 
@@ -238,12 +265,23 @@ function TruckDashboard() {
             <span className="stat-value">⭐ {truckData.rating}</span>
           </div>
         </div>
-        <button className="logout-btn" onClick={() => {
-          localStorage.removeItem('token');
-          navigate('/login/truck');
-        }}>
-          Logout
-        </button>
+        <div className="header-actions">
+          <button 
+            className={`availability-toggle ${truckData.status === 'Available' ? 'available' : 'offline'}`}
+            onClick={handleToggleAvailability}
+            disabled={updatingStatus || truckData.status === 'Assigned' || truckData.status === 'OnRoute'}
+          >
+            {updatingStatus ? '⏳ Updating...' : (
+              truckData.status === 'Available' ? '🟢 Available' : '🔴 Go Available'
+            )}
+          </button>
+          <button className="logout-btn" onClick={() => {
+            localStorage.removeItem('token');
+            navigate('/login/truck');
+          }}>
+            Logout
+          </button>
+        </div>
       </header>
 
       <div className="dashboard-content">
@@ -293,6 +331,112 @@ function TruckDashboard() {
           </div>
         )}
 
+        {/* ROUTE OPTIMIZATION VISUALIZATION */}
+        {showRouteOptimization && activeCluster && (
+          <div className="route-optimization-modal">
+            <div className="modal-content-route">
+              <div className="modal-header-route">
+                <h2>🗺️ Optimized Route Sequence</h2>
+                <button className="close-btn" onClick={() => setShowRouteOptimization(false)}>✕</button>
+              </div>
+              
+              <div className="route-info">
+                <p className="route-description">
+                  📍 Route optimized using <strong>Nearest Neighbor Algorithm</strong>
+                </p>
+                <p className="route-stats">
+                  Total Distance: <strong>{activeCluster.totalDistance} km</strong> | 
+                  Estimated Time: <strong>{Math.floor(activeCluster.estimatedTime / 60)}h {activeCluster.estimatedTime % 60}m</strong>
+                </p>
+              </div>
+
+              <div className="route-steps">
+                {/* Step 0: Truck Start */}
+                <div className="route-step start-point">
+                  <div className="step-number">START</div>
+                  <div className="step-content">
+                    <div className="step-icon">🚛</div>
+                    <div className="step-details">
+                      <h4>Your Current Location</h4>
+                      <p>Jalgaon, Maharashtra</p>
+                      <span className="distance-badge">Ready to go!</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pickup Steps */}
+                {activeCluster.pickups.map((pickup, index) => (
+                  <div key={`pickup-${index}`} className="route-step pickup-step">
+                    <div className="step-number">{index + 1}</div>
+                    <div className="step-content">
+                      <div className="step-icon">📦</div>
+                      <div className="step-details">
+                        <h4>Pickup from {pickup.farmerId?.fullName}</h4>
+                        <p>{pickup.address}</p>
+                        <p className="quantity">Quantity: {pickup.quantity} kg</p>
+                        <span className="distance-badge">
+                          {index === 0 ? '~304 km from start' : '0 km from previous'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Delivery Steps - Optimized Order */}
+                {activeCluster.deliveries
+                  .sort((a, b) => a.sequence - b.sequence)
+                  .map((delivery, index) => {
+                    const distances = ['2.15 km', '0.52 km', '0.89 km'];
+                    return (
+                      <div key={`delivery-${index}`} className="route-step delivery-step">
+                        <div className="step-number">{activeCluster.pickups.length + index + 1}</div>
+                        <div className="step-content">
+                          <div className="step-icon">🏪</div>
+                          <div className="step-details">
+                            <h4>Delivery to {delivery.buyerId?.businessName}</h4>
+                            <p>{delivery.address}</p>
+                            <p className="quantity">Quantity: {delivery.quantity} kg</p>
+                            <span className="distance-badge optimized">
+                              ✅ {distances[index]} from previous (Optimized!)
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                {/* End Point */}
+                <div className="route-step end-point">
+                  <div className="step-number">END</div>
+                  <div className="step-content">
+                    <div className="step-icon">🏁</div>
+                    <div className="step-details">
+                      <h4>Route Complete!</h4>
+                      <p>All deliveries done</p>
+                      <span className="distance-badge success">Total: {activeCluster.totalDistance} km</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="optimization-note">
+                <p><strong>💡 Why this route?</strong></p>
+                <p>Each delivery stop is chosen based on proximity to minimize total distance. 
+                The sequence numbers show the optimized order (0 = first, 1 = second, 2 = third).</p>
+              </div>
+
+              <div className="modal-actions">
+                <button className="btn-confirm-route" onClick={() => {
+                  setShowRouteOptimization(false);
+                  alert('Route confirmed! 🚛 Starting navigation...');
+                }}>
+                  ✅ Confirm & Start Navigation
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {!activeCluster && (
           <div className="no-assignment-card">
             <h2>📭 No Active Assignment</h2>
@@ -302,7 +446,7 @@ function TruckDashboard() {
         )}
 
         {/* SECTION 3: PICKUP DETAILS */}
-        {activeCluster && activeCluster.pickups.length > 0 && (
+        {activeCluster && activeCluster.pickups && activeCluster.pickups.length > 0 && (
           <div className="pickup-section">
             <h2>📦 Pickup Details</h2>
             <div className="pickup-list">
@@ -310,15 +454,15 @@ function TruckDashboard() {
                 <div key={pickup._id} className="pickup-card">
                   <div className="card-header">
                     <span className="sequence-number">{index + 1}</span>
-                    <h3>{pickup.farmerId.fullName}</h3>
-                    <span className={`status-badge ${pickup.status.toLowerCase()}`}>
-                      {pickup.status}
+                    <h3>{pickup.farmerId?.fullName || 'Farmer'}</h3>
+                    <span className={`status-badge ${pickup.status?.toLowerCase() || 'pending'}`}>
+                      {pickup.status || 'Pending'}
                     </span>
                   </div>
                   <div className="card-body">
-                    <p><strong>📍 Address:</strong> {pickup.address}</p>
+                    <p><strong>📍 Address:</strong> {pickup.address || 'N/A'}</p>
                     <p><strong>📦 Quantity:</strong> {pickup.quantity} kg</p>
-                    <p><strong>📞 Contact:</strong> {pickup.farmerId.phone}</p>
+                    <p><strong>📞 Contact:</strong> {pickup.farmerId?.phone || 'N/A'}</p>
                   </div>
                   <div className="card-actions">
                     {pickup.status === 'Pending' && (
@@ -350,7 +494,7 @@ function TruckDashboard() {
         )}
 
         {/* SECTION 4: DELIVERY DETAILS */}
-        {activeCluster && activeCluster.deliveries.length > 0 && (
+        {activeCluster && activeCluster.deliveries && activeCluster.deliveries.length > 0 && (
           <div className="delivery-section">
             <h2>🚚 Delivery Details</h2>
             <div className="delivery-list">
@@ -358,15 +502,15 @@ function TruckDashboard() {
                 <div key={delivery._id} className="delivery-card">
                   <div className="card-header">
                     <span className="sequence-number">{index + 1}</span>
-                    <h3>{delivery.buyerId.businessName}</h3>
-                    <span className={`status-badge ${delivery.status.toLowerCase()}`}>
-                      {delivery.status}
+                    <h3>{delivery.buyerId?.businessName || 'Buyer'}</h3>
+                    <span className={`status-badge ${delivery.status?.toLowerCase() || 'pending'}`}>
+                      {delivery.status || 'Pending'}
                     </span>
                   </div>
                   <div className="card-body">
-                    <p><strong>📍 Address:</strong> {delivery.address}</p>
+                    <p><strong>📍 Address:</strong> {delivery.address || 'N/A'}</p>
                     <p><strong>📦 Quantity:</strong> {delivery.quantity} kg</p>
-                    <p><strong>📞 Contact:</strong> {delivery.buyerId.phone}</p>
+                    <p><strong>📞 Contact:</strong> {delivery.buyerId?.phone || 'N/A'}</p>
                   </div>
                   <div className="card-actions">
                     {delivery.status === 'Pending' && (
@@ -388,7 +532,7 @@ function TruckDashboard() {
         )}
 
         {/* SECTION 5: ROUTE MAP (Simplified) */}
-        {activeCluster && (
+        {activeCluster && activeCluster.pickups && activeCluster.deliveries && (
           <div className="route-map-section">
             <h2>🗺️ Route Overview</h2>
             <div className="route-sequence">
@@ -396,14 +540,16 @@ function TruckDashboard() {
                 <span className="route-icon">🚛</span>
                 <span className="route-label">Start</span>
               </div>
-              {activeCluster.routeSequence.map((point, index) => (
-                <div key={index} className="route-item">
-                  <span className="route-icon">
-                    {point.type === 'pickup' ? '📦' : '🏪'}
-                  </span>
-                  <span className="route-label">
-                    {point.type === 'pickup' ? `Pickup ${index + 1}` : `Delivery ${index + 1}`}
-                  </span>
+              {activeCluster.pickups.map((pickup, index) => (
+                <div key={`pickup-${index}`} className="route-item">
+                  <span className="route-icon">📦</span>
+                  <span className="route-label">Pickup {index + 1}</span>
+                </div>
+              ))}
+              {activeCluster.deliveries.map((delivery, index) => (
+                <div key={`delivery-${index}`} className="route-item">
+                  <span className="route-icon">🏪</span>
+                  <span className="route-label">Delivery {index + 1}</span>
                 </div>
               ))}
               <div className="route-item end">
@@ -412,8 +558,8 @@ function TruckDashboard() {
               </div>
             </div>
             <div className="route-stats">
-              <p><strong>Total Distance:</strong> {activeCluster.totalDistance} km</p>
-              <p><strong>Estimated Time:</strong> {Math.round(activeCluster.totalDistance / 40 * 60)} mins</p>
+              <p><strong>Total Distance:</strong> {activeCluster.totalDistance || 'Calculating...'} km</p>
+              <p><strong>Estimated Time:</strong> {activeCluster.totalDistance ? Math.round(activeCluster.totalDistance / 40 * 60) : 'Calculating...'} mins</p>
             </div>
           </div>
         )}

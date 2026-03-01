@@ -1,0 +1,81 @@
+.trucks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 20px;
+  padding: 20px;
+}
+
+.truck-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: transform 0.2s;
+}
+
+.truck-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.truck-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.truck-header h3 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 20px;
+}
+
+.truck-details {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.detail-section {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+}
+
+.detail-section h4 {
+  margin: 0 0 10px 0;
+  color: #495057;
+  font-size: 16px;
+}
+
+.detail-section p {
+  margin: 5px 0;
+  font-size: 14px;
+  color: #666;
+}
+
+.detail-section p strong {
+  color: #333;
+}
+
+.truck-actions {
+  margin-top: 10px;
+}
+
+.truck-actions button {
+  width: 100%;
+}
+
+.no-data {
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+}
+
+.no-data p:first-child {
+  font-size: 24px;
+  margin-bottom: 10px;
+}

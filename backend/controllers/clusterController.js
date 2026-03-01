@@ -102,4 +102,179 @@ exports.getClusteringStats = async (req, res) => {
   }
 };
 
+// Debug endpoint to check orders ready for clustering
+exports.debugOrders = async (req, res) => {
+  try {
+    const allOrders = await Order.find({})
+      .select('orderId requestStatus assignedTruckId pickupCoordinates deliveryCoordinates cropType quantity')
+      .sort({ createdAt: -1 })
+      .limit(10);
+
+    const acceptedOrders = await Order.find({ requestStatus: 'accepted' })
+      .select('orderId requestStatus assignedTruckId pickupCoordinates deliveryCoordinates cropType quantity');
+
+    const readyForClustering = await Order.find({
+      requestStatus: 'accepted',
+      assignedTruckId: null,
+      pickupCoordinates: { $exists: true, $ne: null },
+      deliveryCoordinates: { $exists: true, $ne: null },
+    }).select('orderId requestStatus pickupCoordinates deliveryCoordinates cropType quantity');
+
+    res.json({
+      success: true,
+      data: {
+        totalOrders: allOrders.length,
+        recentOrders: allOrders,
+        acceptedOrders: acceptedOrders.length,
+        acceptedOrdersList: acceptedOrders,
+        readyForClustering: readyForClustering.length,
+        readyForClusteringList: readyForClustering,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// Debug endpoint to verify route optimization
+exports.debugRouteOptimization = async (req, res) => {
+  try {
+    const { clusterId } = req.params;
+    const { calculateDistance } = require('../services/clusteringService');
+    
+    const cluster = await Cluster.findById(clusterId)
+      .populate('assignedTruckId')
+      .populate({
+        path: 'orders',
+        populate: [
+          { path: 'buyerId', select: 'businessName phone' },
+          { path: 'farmerId', select: 'fullName phone' }
+        ]
+      });
+
+    if (!cluster) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Cluster not found' 
+      });
+    }
+
+    // Calculate distances between consecutive stops
+    const pickupRoute = cluster.pickups.map((pickup, idx) => {
+      let distanceFromPrevious = 0;
+      let previousLocation = '';
+      
+      if (idx === 0) {
+        // Distance from truck to first pickup
+        const truckCoords = cluster.assignedTruckId?.coordinates || cluster.centerCoordinates;
+        distanceFromPrevious = calculateDistance(
+          truckCoords.latitude,
+          truckCoords.longitude,
+          pickup.coordinates.latitude,
+          pickup.coordinates.longitude
+        );
+        previousLocation = 'Truck Start Location';
+      } else {
+        // Distance from previous pickup
+        distanceFromPrevious = calculateDistance(
+          cluster.pickups[idx - 1].coordinates.latitude,
+          cluster.pickups[idx - 1].coordinates.longitude,
+          pickup.coordinates.latitude,
+          pickup.coordinates.longitude
+        );
+        previousLocation = `Pickup ${idx}`;
+      }
+      
+      return {
+        sequence: pickup.sequence,
+        farmerId: pickup.farmerId,
+        address: pickup.address,
+        coordinates: pickup.coordinates,
+        quantity: `${pickup.quantity} kg`,
+        distanceFromPrevious: `${distanceFromPrevious.toFixed(2)} km`,
+        previousLocation
+      };
+    });
+    
+    const deliveryRoute = cluster.deliveries.map((delivery, idx) => {
+      let distanceFromPrevious = 0;
+      let previousLocation = '';
+      
+      if (idx === 0) {
+        // Distance from last pickup to first delivery
+        if (cluster.pickups.length > 0) {
+          const lastPickup = cluster.pickups[cluster.pickups.length - 1];
+          distanceFromPrevious = calculateDistance(
+            lastPickup.coordinates.latitude,
+            lastPickup.coordinates.longitude,
+            delivery.coordinates.latitude,
+            delivery.coordinates.longitude
+          );
+          previousLocation = `Last Pickup (Farmer)`;
+        }
+      } else {
+        // Distance from previous delivery
+        distanceFromPrevious = calculateDistance(
+          cluster.deliveries[idx - 1].coordinates.latitude,
+          cluster.deliveries[idx - 1].coordinates.longitude,
+          delivery.coordinates.latitude,
+          delivery.coordinates.longitude
+        );
+        previousLocation = `Delivery ${idx} (Buyer ${idx})`;
+      }
+      
+      return {
+        sequence: delivery.sequence,
+        buyerId: delivery.buyerId,
+        address: delivery.address,
+        coordinates: delivery.coordinates,
+        quantity: `${delivery.quantity} kg`,
+        distanceFromPrevious: `${distanceFromPrevious.toFixed(2)} km`,
+        previousLocation
+      };
+    });
+
+    const routeAnalysis = {
+      clusterId: cluster._id,
+      truckNumber: cluster.assignedTruckId?.truckNumber,
+      truckLocation: cluster.assignedTruckId?.coordinates,
+      status: cluster.status,
+      
+      summary: {
+        totalWeight: `${cluster.totalWeight} kg`,
+        totalDistance: `${cluster.totalDistance} km`,
+        estimatedTime: `${cluster.estimatedTime} minutes (${(cluster.estimatedTime / 60).toFixed(1)} hours)`,
+        earning: `₹${cluster.earning}`,
+        totalPickups: cluster.pickups.length,
+        totalDeliveries: cluster.deliveries.length,
+      },
+      
+      pickupRoute: pickupRoute,
+      deliveryRoute: deliveryRoute,
+      
+      optimization: {
+        method: 'Nearest Neighbor Algorithm',
+        description: 'Each delivery stop is chosen based on proximity to the previous location',
+        note: 'The sequence field shows the optimized order (0 = first, 1 = second, etc.)',
+        proof: 'Compare the sequence numbers with distances - closer stops have lower sequence numbers'
+      }
+    };
+
+    res.json({
+      success: true,
+      data: routeAnalysis
+    });
+
+  } catch (error) {
+    console.error('Debug route error:', error);
+    res.status(500).json({ 
+      success: false,
+      message: error.message 
+    });
+  }
+};
+
 module.exports = exports;

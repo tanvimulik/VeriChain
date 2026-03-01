@@ -225,7 +225,28 @@ function optimizeRoute(pickups, deliveries, startCoordinates) {
 // Main clustering function
 async function runClustering() {
   try {
-    console.log('🔄 Starting clustering process...');
+    console.log('🔄 Starting BUYER-BASED clustering process...');
+    console.log('📋 Clustering based on BUYER DELIVERY locations');
+    console.log('📋 Checking clustering criteria:');
+    console.log('   - requestStatus: "accepted"');
+    console.log('   - assignedTruckId: null');
+    console.log('   - pickupCoordinates: exists');
+    console.log('   - deliveryCoordinates: exists');
+
+    // Debug: Check all orders
+    const allOrders = await Order.find({});
+    console.log(`📊 Total orders in database: ${allOrders.length}`);
+    
+    if (allOrders.length > 0) {
+      console.log('📋 Sample order statuses:');
+      allOrders.slice(0, 3).forEach(o => {
+        console.log(`   Order ${o.orderId}:`);
+        console.log(`     - requestStatus: ${o.requestStatus}`);
+        console.log(`     - assignedTruckId: ${o.assignedTruckId}`);
+        console.log(`     - pickupCoordinates: ${o.pickupCoordinates ? 'YES' : 'NO'}`);
+        console.log(`     - deliveryCoordinates: ${o.deliveryCoordinates ? 'YES' : 'NO'}`);
+      });
+    }
 
     // Fetch all accepted but unassigned orders
     const orders = await Order.find({
@@ -236,27 +257,29 @@ async function runClustering() {
     }).populate('farmerId buyerId cropId');
 
     if (orders.length === 0) {
-      console.log('✅ No orders to cluster');
+      console.log('⚠️ No orders match clustering criteria');
       return { success: true, message: 'No orders to cluster', clustersCreated: 0 };
     }
 
     console.log(`📦 Found ${orders.length} orders to cluster`);
 
-    // Prepare points for DBSCAN
+    // 🔥 BUYER-BASED CLUSTERING: Use DELIVERY coordinates (buyer locations)
     const points = orders.map(order => ({
       orderId: order._id,
-      lat: order.pickupCoordinates.latitude,
-      lon: order.pickupCoordinates.longitude,
+      lat: order.deliveryCoordinates.latitude,  // Changed from pickupCoordinates
+      lon: order.deliveryCoordinates.longitude, // Changed from pickupCoordinates
       quantity: order.quantity,
       order: order,
     }));
 
-    // Run DBSCAN (8km radius, min 2 points)
+    console.log('🎯 Clustering based on BUYER delivery locations (not farmer pickup locations)');
+
+    // Run DBSCAN (8km radius, min 1 point)
     const eps = 8; // 8 km
     const minPoints = 1; // Allow single orders
     const clusterIndices = dbscan(points, eps, minPoints);
 
-    console.log(`🎯 DBSCAN created ${clusterIndices.length} initial clusters`);
+    console.log(`🎯 DBSCAN created ${clusterIndices.length} initial clusters based on buyer locations`);
 
     let clustersCreated = 0;
 
@@ -265,7 +288,7 @@ async function runClustering() {
       const clusterOrders = clusterIdx.map(idx => points[idx].order);
       const totalWeight = clusterOrders.reduce((sum, o) => sum + o.quantity, 0);
 
-      console.log(`📊 Processing cluster with ${clusterOrders.length} orders, total weight: ${totalWeight}kg`);
+      console.log(`📊 Processing cluster with ${clusterOrders.length} orders (${clusterOrders.length} buyers), total weight: ${totalWeight}kg`);
 
       // Split by capacity if needed (2000kg limit)
       const MAX_CAPACITY = 2000;
@@ -276,9 +299,16 @@ async function runClustering() {
       // Assign truck to each bin
       for (const bin of bins) {
         const binWeight = bin.reduce((sum, o) => sum + o.quantity, 0);
-        const centerCoords = calculateCentroid(bin);
+        
+        // 🔥 Calculate center based on BUYER locations (delivery coordinates)
+        const centerCoords = {
+          latitude: bin.reduce((sum, o) => sum + o.deliveryCoordinates.latitude, 0) / bin.length,
+          longitude: bin.reduce((sum, o) => sum + o.deliveryCoordinates.longitude, 0) / bin.length
+        };
 
-        // Find nearest available truck
+        console.log(`📍 Cluster center (buyer area): Lat ${centerCoords.latitude}, Lon ${centerCoords.longitude}`);
+
+        // Find nearest available truck to buyer cluster center
         const truck = await findNearestTruck(centerCoords, binWeight);
 
         if (!truck) {
@@ -286,9 +316,9 @@ async function runClustering() {
           continue;
         }
 
-        console.log(`🚛 Assigned truck ${truck.truckNumber} (capacity: ${truck.capacity}kg) for ${binWeight}kg`);
+        console.log(`🚛 Assigned truck ${truck.truckNumber} (capacity: ${truck.capacity}kg) for ${binWeight}kg to ${bin.length} buyers`);
 
-        // Prepare pickups and deliveries
+        // Prepare pickups (from farmers)
         const pickups = bin.map((order, idx) => ({
           orderId: order._id,
           farmerId: order.farmerId._id,
@@ -298,6 +328,7 @@ async function runClustering() {
           sequence: idx,
         }));
 
+        // Prepare deliveries (to buyers) - THIS IS THE MAIN ROUTE
         const deliveries = bin.map((order, idx) => ({
           orderId: order._id,
           buyerId: order.buyerId._id,
@@ -307,12 +338,85 @@ async function runClustering() {
           sequence: idx,
         }));
 
-        // Optimize route
-        const { pickupRoute, deliveryRoute } = optimizeRoute(
-          pickups,
-          deliveries,
-          truck.coordinates || centerCoords
-        );
+        // Optimize delivery route (buyer locations)
+        const optimizedDeliveries = [];
+        let remaining = [...deliveries];
+        let current = truck.coordinates || centerCoords;
+        
+        while (remaining.length > 0) {
+          let nearestIdx = 0;
+          let minDist = Infinity;
+          
+          remaining.forEach((delivery, idx) => {
+            const dist = calculateDistance(
+              current.latitude,
+              current.longitude,
+              delivery.coordinates.latitude,
+              delivery.coordinates.longitude
+            );
+            if (dist < minDist) {
+              minDist = dist;
+              nearestIdx = idx;
+            }
+          });
+          
+          const nearest = remaining.splice(nearestIdx, 1)[0];
+          optimizedDeliveries.push({ ...nearest, sequence: optimizedDeliveries.length });
+          current = nearest.coordinates;
+        }
+
+        console.log(`🗺️ Optimized delivery route for ${optimizedDeliveries.length} buyers`);
+
+        // Calculate total distance for the route
+        let totalDistance = 0;
+        let currentPos = truck.coordinates || centerCoords;
+        
+        // Distance from truck to first pickup
+        if (pickups.length > 0) {
+          totalDistance += calculateDistance(
+            currentPos.latitude,
+            currentPos.longitude,
+            pickups[0].coordinates.latitude,
+            pickups[0].coordinates.longitude
+          );
+          currentPos = pickups[0].coordinates;
+        }
+        
+        // Distance between pickups (if multiple farmers)
+        for (let i = 1; i < pickups.length; i++) {
+          totalDistance += calculateDistance(
+            pickups[i-1].coordinates.latitude,
+            pickups[i-1].coordinates.longitude,
+            pickups[i].coordinates.latitude,
+            pickups[i].coordinates.longitude
+          );
+        }
+        
+        // Distance from last pickup to first delivery
+        if (pickups.length > 0 && optimizedDeliveries.length > 0) {
+          totalDistance += calculateDistance(
+            pickups[pickups.length - 1].coordinates.latitude,
+            pickups[pickups.length - 1].coordinates.longitude,
+            optimizedDeliveries[0].coordinates.latitude,
+            optimizedDeliveries[0].coordinates.longitude
+          );
+        }
+        
+        // Distance between deliveries (buyer to buyer)
+        for (let i = 1; i < optimizedDeliveries.length; i++) {
+          totalDistance += calculateDistance(
+            optimizedDeliveries[i-1].coordinates.latitude,
+            optimizedDeliveries[i-1].coordinates.longitude,
+            optimizedDeliveries[i].coordinates.latitude,
+            optimizedDeliveries[i].coordinates.longitude
+          );
+        }
+        
+        // Estimate time (assuming 40 km/h average speed)
+        const estimatedTime = Math.round((totalDistance / 40) * 60); // in minutes
+        
+        console.log(`📏 Total route distance: ${totalDistance.toFixed(2)} km`);
+        console.log(`⏱️ Estimated time: ${estimatedTime} minutes`);
 
         // Calculate earning (₹5 per kg)
         const earning = binWeight * 5;
@@ -321,12 +425,14 @@ async function runClustering() {
         const cluster = await Cluster.create({
           assignedTruckId: truck._id,
           orders: bin.map(o => o._id),
-          pickups: pickupRoute.map((p, idx) => ({ ...p, sequence: idx })),
-          deliveries: deliveryRoute.map((d, idx) => ({ ...d, sequence: idx })),
+          pickups: pickups,
+          deliveries: optimizedDeliveries,
           totalWeight: binWeight,
           earning: earning,
           status: 'Assigned',
           centerCoordinates: centerCoords,
+          totalDistance: Math.round(totalDistance * 100) / 100, // Round to 2 decimals
+          estimatedTime: estimatedTime,
         });
 
         // Update truck
@@ -345,6 +451,8 @@ async function runClustering() {
 
         clustersCreated++;
         console.log(`✅ Cluster created with ID: ${cluster._id}`);
+        console.log(`   - ${pickups.length} pickup(s) from farmer(s)`);
+        console.log(`   - ${optimizedDeliveries.length} delivery(ies) to buyer(s)`);
       }
     }
 

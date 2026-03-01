@@ -3,6 +3,9 @@ const orderController = require('../controllers/orderController');
 const authMiddleware = require('../middleware/auth');
 const router = express.Router();
 
+// Buyer Profile
+router.get('/buyer/profile', authMiddleware, orderController.getBuyerProfile);
+
 // Order Request Flow
 router.post('/request', authMiddleware, orderController.createOrderRequest);
 router.put('/:orderId/accept', authMiddleware, orderController.acceptOrderRequest);

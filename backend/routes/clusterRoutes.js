@@ -6,6 +6,12 @@ const authMiddleware = require('../middleware/auth');
 // Trigger clustering (can be called manually or by cron job)
 router.post('/run', clusterController.triggerClustering);
 
+// Debug endpoint to check orders
+router.get('/debug/orders', clusterController.debugOrders);
+
+// Debug endpoint to verify route optimization
+router.get('/debug/route/:clusterId', clusterController.debugRouteOptimization);
+
 // Get all clusters
 router.get('/', authMiddleware, clusterController.getAllClusters);
 

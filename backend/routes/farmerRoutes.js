@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/auth');
 const {
+  getProfile,
   createCrop,
   getMyListings,
   updateCrop,
@@ -18,6 +19,9 @@ const {
   getMyNotifications,
   markNotificationRead,
 } = require('../controllers/farmerController');
+
+// Profile
+router.get('/profile', authMiddleware, getProfile);
 
 // Crop Management
 router.post('/crops', authMiddleware, createCrop);
