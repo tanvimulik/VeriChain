@@ -20,8 +20,17 @@ function BuyerOrders() {
       const response = await api.get('/orders/buyer/orders');
       const ordersData = response.data.data || [];
       
+      console.log('=== BUYER ORDERS DEBUG ===');
+      console.log('Orders received:', ordersData.length);
+      console.log('First order:', ordersData[0]);
+      console.log('Farmer data:', ordersData[0]?.farmerId);
+      console.log('========================');
+      
       // Transform orders data to match the layout structure
       const transformedOrders = ordersData.map(order => {
+        // Get farmer name from populated farmerId
+        const farmerName = order.farmerId?.fullName || order.farmerName || "Unknown Farmer";
+        
         // Get crop image from the populated crop data
         let cropImage = null;
         if (order.cropId && order.cropId.cropImages && order.cropId.cropImages.length > 0) {
@@ -48,7 +57,7 @@ function BuyerOrders() {
             `Price: ₹${order.pricePerUnit || 0}/${order.unit || 'kg'}`,
             `Farmer Verified Quality`
           ],
-          farmer: order.farmerName || "Unknown Farmer",
+          farmer: farmerName,
           quantity: `${order.quantity || 0} ${order.unit || 'kg'}`,
           pricePerUnit: `₹${order.pricePerUnit || 0}/${order.unit || 'kg'}`,
           cropCost: order.farmerPrice || 0,
@@ -76,7 +85,7 @@ function BuyerOrders() {
             }),
           shipTo: order.deliveryAddress || "Your Farm Location",
           cropImage: cropImage,
-          farmerId: order.farmerId || null,
+          farmerId: order.farmerId?._id || order.farmerId || null,
           _id: order._id
         };
       });
@@ -400,6 +409,29 @@ function BuyerOrders() {
                           <li key={idx}>{feature}</li>
                         ))}
                       </ul>
+                      
+                      {/* Chat Button */}
+                      {order.farmerId && (
+                        <button 
+                          className="chat-farmer-btn-small"
+                          onClick={async () => {
+                            try {
+                              // Create or get existing chat with farmer
+                              const response = await api.post('/chats/create', {
+                                farmerId: order.farmerId,
+                                cropId: order.cropId?._id || null
+                              });
+                              const chatId = response.data.data._id;
+                              navigate(`/chat/${chatId}`);
+                            } catch (error) {
+                              console.error('Error creating chat:', error);
+                              alert('Unable to start chat. Please try again.');
+                            }
+                          }}
+                        >
+                          <i className="fas fa-comment-dots"></i> Chat with Farmer
+                        </button>
+                      )}
                     </div>
 
                     {/* Right Column - Order Details */}

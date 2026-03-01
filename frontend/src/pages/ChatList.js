@@ -20,10 +20,18 @@ function ChatList() {
 
   const fetchChats = async () => {
     try {
+      console.log('=== FETCHING CHATS DEBUG ===');
+      console.log('User Role:', userRole);
+      console.log('API URL:', '/chats');
       const response = await api.get('/chats');
-      setChats(response.data.data);
+      console.log('Chats Response:', response.data);
+      console.log('Chats Data:', response.data.data);
+      console.log('Number of chats:', response.data.data?.length);
+      console.log('============================');
+      setChats(response.data.data || []);
     } catch (error) {
       console.error('Error fetching chats:', error);
+      console.error('Error details:', error.response?.data);
     } finally {
       setLoading(false);
     }
@@ -46,7 +54,19 @@ function ChatList() {
   };
 
   const getOtherUser = (chat) => {
-    return userRole === 'farmer' ? chat.buyer : chat.farmer;
+    if (userRole === 'farmer') {
+      // For farmers, show buyer's business name or full name
+      return {
+        fullName: chat.buyer?.businessName || chat.buyer?.fullName || 'Unknown Buyer',
+        phone: chat.buyer?.phone
+      };
+    } else {
+      // For buyers, show farmer's full name
+      return {
+        fullName: chat.farmer?.fullName || 'Unknown Farmer',
+        phone: chat.farmer?.phone
+      };
+    }
   };
 
   const getUnreadCount = (chat) => {
@@ -81,12 +101,16 @@ function ChatList() {
           <div className="no-chats">
             <div className="no-chats-icon">💬</div>
             <h3>No conversations yet</h3>
-            <p>Start chatting with {userRole === 'farmer' ? 'buyers' : 'farmers'} to discuss crop details</p>
+            <p>
+              {userRole === 'farmer' 
+                ? 'When buyers contact you about your crops, their messages will appear here' 
+                : 'Start chatting with farmers to discuss crop details'}
+            </p>
             <button
               className="btn-primary"
               onClick={() => navigate(userRole === 'farmer' ? '/farmer-dashboard' : '/marketplace')}
             >
-              {userRole === 'farmer' ? 'View Orders' : 'Browse Crops'}
+              {userRole === 'farmer' ? 'Back to Dashboard' : 'Browse Crops'}
             </button>
           </div>
         ) : (
@@ -106,7 +130,14 @@ function ChatList() {
                   </div>
                   <div className="chat-info">
                     <div className="chat-header-row">
-                      <h3 className="chat-name">{otherUser?.fullName}</h3>
+                      <h3 className="chat-name">
+                        {otherUser?.fullName}
+                        {userRole === 'farmer' && chat.buyer?.businessType && (
+                          <span style={{ fontSize: '0.75rem', color: '#666', marginLeft: '0.5rem' }}>
+                            ({chat.buyer.businessType})
+                          </span>
+                        )}
+                      </h3>
                       <span className="chat-time">{formatTime(chat.lastMessageTime)}</span>
                     </div>
                     {chat.crop && (

@@ -110,6 +110,10 @@ function App() {
         {/* Chat */}
         <Route path="/chats" element={<ChatList />} />
         <Route path="/chat/:chatId" element={<ChatWindow />} />
+        <Route path="/buyer/chats" element={<ChatList />} />
+        <Route path="/buyer/chat/:farmerId" element={<ChatWindow />} />
+        <Route path="/farmer/chats" element={<ChatList />} />
+        <Route path="/farmer/chat/:buyerId" element={<ChatWindow />} />
 
         {/* Admin */}
         <Route path="/admin/dashboard" element={<AdminPanel />} />

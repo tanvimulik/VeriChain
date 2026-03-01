@@ -9,13 +9,19 @@ exports.getOrCreateChat = async (req, res) => {
     const { farmerId, cropId } = req.body;
     const buyerId = req.user.id;
 
+    console.log('=== CREATE/GET CHAT DEBUG ===');
+    console.log('Buyer ID:', buyerId);
+    console.log('Farmer ID:', farmerId);
+    console.log('Crop ID:', cropId);
+
     // Check if chat already exists
     let chat = await Chat.findOne({ farmer: farmerId, buyer: buyerId })
       .populate('farmer', 'fullName phone')
-      .populate('buyer', 'fullName phone')
+      .populate('buyer', 'fullName phone businessName')
       .populate('crop', 'cropName pricePerUnit unit');
 
     if (!chat) {
+      console.log('Chat not found, creating new chat...');
       // Create new chat
       chat = await Chat.create({
         farmer: farmerId,
@@ -26,9 +32,15 @@ exports.getOrCreateChat = async (req, res) => {
 
       chat = await Chat.findById(chat._id)
         .populate('farmer', 'fullName phone')
-        .populate('buyer', 'fullName phone')
+        .populate('buyer', 'fullName phone businessName')
         .populate('crop', 'cropName pricePerUnit unit');
+      
+      console.log('New chat created:', chat._id);
+    } else {
+      console.log('Existing chat found:', chat._id);
     }
+
+    console.log('============================');
 
     res.status(200).json({
       success: true,
@@ -50,6 +62,10 @@ exports.getUserChats = async (req, res) => {
     const userId = req.user.id;
     const userRole = req.user.role;
 
+    console.log('=== GET USER CHATS DEBUG ===');
+    console.log('User ID:', userId);
+    console.log('User Role:', userRole);
+
     let query = {};
     if (userRole === 'farmer') {
       query.farmer = userId;
@@ -57,14 +73,21 @@ exports.getUserChats = async (req, res) => {
       query.buyer = userId;
     }
 
+    console.log('Query:', query);
+
     const chats = await Chat.find(query)
       .populate('farmer', 'fullName phone')
-      .populate('buyer', 'fullName phone')
+      .populate('buyer', 'fullName phone businessName')
       .populate('crop', 'cropName pricePerUnit unit')
       .sort({ lastMessageTime: -1 });
 
+    console.log('Chats found:', chats.length);
+    console.log('First chat:', chats[0]);
+    console.log('============================');
+
     res.status(200).json({
       success: true,
+      count: chats.length,
       data: chats
     });
   } catch (error) {

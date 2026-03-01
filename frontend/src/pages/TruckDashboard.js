@@ -13,7 +13,7 @@ function TruckDashboard() {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [showRouteOptimization, setShowRouteOptimization] = useState(false);
 
-  // HARDCODED DATA FOR SHRAVANI MULIK - REAL CLUSTER DATA
+  // HARDCODED DATA FOR SHRAVANI MULIK - ALL LOCATIONS IN PUNE AREA (8-10KM RADIUS)
   const mockTruckData = {
     fullName: "Shravani Mulik",
     truckNumber: "MH45B3455",
@@ -21,7 +21,7 @@ function TruckDashboard() {
     capacity: 5000,
     currentLoad: 75,
     status: "Assigned",
-    coordinates: { latitude: 20.96178, longitude: 75.55320 },
+    coordinates: { latitude: 18.5074, longitude: 73.8077 }, // Kothrud, Pune
     totalTrips: 0,
     totalEarnings: 0,
     rating: 0
@@ -30,19 +30,19 @@ function TruckDashboard() {
   const mockActiveCluster = {
     _id: "69a3c588a7897150fe3131bc",
     totalWeight: 75,
-    totalDistance: 312.45,
-    estimatedTime: 469,
+    totalDistance: 8.5, // Updated to realistic 8.5km
+    estimatedTime: 25, // Updated to 25 minutes
     earning: 375,
     status: "Assigned",
-    centerCoordinates: { latitude: 20.96283, longitude: 75.55467 },
+    centerCoordinates: { latitude: 18.5199, longitude: 73.8554 }, // Hadapsar center
     pickups: [
       {
         _id: "pickup1",
         farmerId: { fullName: "Ramesh Patil", phone: "9999888877" },
-        coordinates: { latitude: 18.15, longitude: 74.58 },
+        coordinates: { latitude: 18.5204, longitude: 73.8567 }, // Hadapsar, Pune
         quantity: 75,
         status: "Pending",
-        address: "Baramati Village, Pune District",
+        address: "Hadapsar, Pune District",
         sequence: 0
       }
     ],
@@ -50,36 +50,36 @@ function TruckDashboard() {
       {
         _id: "delivery1",
         buyerId: { businessName: "Test Kirana Store", phone: "9988776655" },
-        coordinates: { latitude: 20.96350, longitude: 75.55500 },
+        coordinates: { latitude: 18.5196, longitude: 73.8553 }, // Near Hadapsar
         quantity: 25,
         status: "Pending",
-        address: "Shop No 5, MG Road, Pune",
+        address: "Shop No 5, MG Road, Hadapsar, Pune",
         sequence: 0
       },
       {
         _id: "delivery2",
         buyerId: { businessName: "Mahalakshmi Hotel", phone: "4567890123" },
-        coordinates: { latitude: 20.96000, longitude: 75.55100 },
+        coordinates: { latitude: 18.5220, longitude: 73.8590 }, // Wanowrie, Pune
         quantity: 20,
         status: "Pending",
-        address: "Pune",
+        address: "Wanowrie, Pune",
         sequence: 1
       },
       {
         _id: "delivery3",
         buyerId: { businessName: "Royal Caterers & Events", phone: "9765432108" },
-        coordinates: { latitude: 20.96500, longitude: 75.55800 },
+        coordinates: { latitude: 18.5180, longitude: 73.8520 }, // Market Yard, Hadapsar
         quantity: 30,
         status: "Pending",
-        address: "Shop 78, Moryanagar Market Yard, Behind Bus Stand, Pune 411041",
+        address: "Shop 78, Market Yard, Hadapsar, Pune 411028",
         sequence: 2
       }
     ],
     routeSequence: [
-      { type: "pickup", location: { latitude: 18.15, longitude: 74.58 } },
-      { type: "delivery", location: { latitude: 20.96350, longitude: 75.55500 } },
-      { type: "delivery", location: { latitude: 20.96000, longitude: 75.55100 } },
-      { type: "delivery", location: { latitude: 20.96500, longitude: 75.55800 } }
+      { type: "pickup", location: { latitude: 18.5204, longitude: 73.8567 } },
+      { type: "delivery", location: { latitude: 18.5196, longitude: 73.8553 } },
+      { type: "delivery", location: { latitude: 18.5220, longitude: 73.8590 } },
+      { type: "delivery", location: { latitude: 18.5180, longitude: 73.8520 } }
     ]
   };
 
@@ -277,7 +277,8 @@ function TruckDashboard() {
           </button>
           <button className="logout-btn" onClick={() => {
             localStorage.removeItem('token');
-            navigate('/login/truck');
+            localStorage.removeItem('role');
+            navigate('/');
           }}>
             Logout
           </button>
@@ -358,7 +359,7 @@ function TruckDashboard() {
                     <div className="step-icon">🚛</div>
                     <div className="step-details">
                       <h4>Your Current Location</h4>
-                      <p>Jalgaon, Maharashtra</p>
+                      <p>Kothrud, Pune</p>
                       <span className="distance-badge">Ready to go!</span>
                     </div>
                   </div>

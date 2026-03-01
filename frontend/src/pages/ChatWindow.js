@@ -75,7 +75,21 @@ function ChatWindow() {
 
   const getOtherUser = () => {
     if (!chat) return null;
-    return userRole === 'farmer' ? chat.buyer : chat.farmer;
+    
+    if (userRole === 'farmer') {
+      // For farmers, show buyer's business name or full name
+      return {
+        fullName: chat.buyer?.businessName || chat.buyer?.fullName || 'Unknown Buyer',
+        phone: chat.buyer?.phone,
+        businessType: chat.buyer?.businessType
+      };
+    } else {
+      // For buyers, show farmer's full name
+      return {
+        fullName: chat.farmer?.fullName || 'Unknown Farmer',
+        phone: chat.farmer?.phone
+      };
+    }
   };
 
   if (loading) {
@@ -108,7 +122,14 @@ function ChatWindow() {
             {userRole === 'farmer' ? '🛒' : '👨‍🌾'}
           </div>
           <div className="user-details">
-            <h3>{otherUser?.fullName}</h3>
+            <h3>
+              {otherUser?.fullName}
+              {userRole === 'farmer' && otherUser?.businessType && (
+                <span style={{ fontSize: '0.85rem', color: '#666', fontWeight: 'normal', marginLeft: '0.5rem' }}>
+                  ({otherUser.businessType})
+                </span>
+              )}
+            </h3>
             {chat.crop && (
               <p className="crop-info">
                 🌾 {chat.crop.cropName} - ₹{chat.crop.pricePerUnit}/{chat.crop.unit}

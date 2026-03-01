@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import api from '../utils/api';
 import './AuthPages.css';
 
@@ -97,104 +97,161 @@ function TruckRegister() {
   };
 
   return (
-    <div className="auth-page">
-      <div className="auth-container">
-        <div className="auth-card">
-          <div className="auth-header">
-            <h1>🚛 Truck Driver Registration</h1>
-            <p>Join as a delivery partner and start earning</p>
+    <div className="modern-auth-page">
+      {/* Left Side - Branding */}
+      <div className="auth-branding-side truck-branding">
+        <div className="branding-content">
+          <div className="brand-logo">
+            <i className="fas fa-truck"></i>
+            <h1>FarmConnect</h1>
+          </div>
+          <h2>Earn by Delivering Fresh Produce</h2>
+          <p>Join our logistics network and connect farmers with buyers</p>
+          
+          <div className="benefits-list">
+            <div className="benefit-item">
+              <i className="fas fa-check-circle"></i>
+              <span>Flexible working hours</span>
+            </div>
+            <div className="benefit-item">
+              <i className="fas fa-check-circle"></i>
+              <span>Guaranteed payments</span>
+            </div>
+            <div className="benefit-item">
+              <i className="fas fa-check-circle"></i>
+              <span>Optimized routes</span>
+            </div>
+            <div className="benefit-item">
+              <i className="fas fa-check-circle"></i>
+              <span>24/7 support</span>
+            </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="auth-form">
-            {/* Personal Details */}
+          <div className="trust-badges">
+            <div className="badge">
+              <strong>500+</strong>
+              <span>Drivers</span>
+            </div>
+            <div className="badge">
+              <strong>₹50K+</strong>
+              <span>Avg Monthly</span>
+            </div>
+            <div className="badge">
+              <strong>4.9★</strong>
+              <span>Rating</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Side - Registration Form */}
+      <div className="auth-form-side">
+        <div className="form-container">
+          <div className="form-header">
+            <h2>Register as Truck Driver</h2>
+            <p>Start earning by delivering fresh produce</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="modern-form">
+            {/* Personal Information Section */}
             <div className="form-section">
-              <h3>👤 Personal Details</h3>
+              <h3 className="section-title">
+                <i className="fas fa-user"></i> Personal Information
+              </h3>
               
-              <div className="form-group">
-                <label>Full Name *</label>
-                <input
-                  type="text"
-                  name="fullName"
-                  placeholder="Your full name"
-                  value={formData.fullName}
-                  onChange={handleChange}
-                  required
-                />
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Full Name <span className="required">*</span></label>
+                  <input
+                    type="text"
+                    name="fullName"
+                    placeholder="Your full name"
+                    value={formData.fullName}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Mobile Number <span className="required">*</span></label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    placeholder="10-digit mobile number"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    maxLength="10"
+                    required
+                  />
+                </div>
               </div>
 
-              <div className="form-group">
-                <label>📱 Mobile Number *</label>
-                <input
-                  type="tel"
-                  name="phone"
-                  placeholder="10-digit number"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  maxLength="10"
-                  required
-                />
-              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Password <span className="required">*</span></label>
+                  <input
+                    type="password"
+                    name="password"
+                    placeholder="Create a strong password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
 
-              <div className="form-group">
-                <label>🔐 Password *</label>
-                <input
-                  type="password"
-                  name="password"
-                  placeholder="Create password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Confirm Password *</label>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  placeholder="Re-enter password"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  required
-                />
+                <div className="form-group">
+                  <label>Confirm Password <span className="required">*</span></label>
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    placeholder="Re-enter password"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Truck Details */}
+            {/* Truck Details Section */}
             <div className="form-section">
-              <h3>🚚 Truck Details</h3>
+              <h3 className="section-title">
+                <i className="fas fa-truck-moving"></i> Truck Details
+              </h3>
               
-              <div className="form-group">
-                <label>Truck Number *</label>
-                <input
-                  type="text"
-                  name="truckNumber"
-                  placeholder="e.g., MH12AB1234"
-                  value={formData.truckNumber}
-                  onChange={handleChange}
-                  required
-                />
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Truck Number <span className="required">*</span></label>
+                  <input
+                    type="text"
+                    name="truckNumber"
+                    placeholder="e.g., MH12AB1234"
+                    value={formData.truckNumber}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Vehicle Type <span className="required">*</span></label>
+                  <select
+                    name="vehicleType"
+                    value={formData.vehicleType}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="">Select vehicle type</option>
+                    <option value="Tata Ace">Tata Ace</option>
+                    <option value="Pickup">Pickup Truck</option>
+                    <option value="Mini Truck">Mini Truck</option>
+                    <option value="Medium Truck">Medium Truck</option>
+                    <option value="Large Truck">Large Truck</option>
+                  </select>
+                </div>
               </div>
 
               <div className="form-group">
-                <label>Vehicle Type *</label>
-                <select
-                  name="vehicleType"
-                  value={formData.vehicleType}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="">Select vehicle type</option>
-                  <option value="Tata Ace">Tata Ace</option>
-                  <option value="Pickup">Pickup Truck</option>
-                  <option value="Mini Truck">Mini Truck</option>
-                  <option value="Medium Truck">Medium Truck</option>
-                  <option value="Large Truck">Large Truck</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>Truck Capacity (kg) *</label>
+                <label>Truck Capacity (kg) <span className="required">*</span></label>
                 <input
                   type="number"
                   name="capacity"
@@ -203,15 +260,18 @@ function TruckRegister() {
                   onChange={handleChange}
                   required
                 />
+                <small className="form-hint">Maximum load capacity in kilograms</small>
               </div>
             </div>
 
-            {/* Location Details */}
+            {/* Location Section */}
             <div className="form-section">
-              <h3>📍 Location Details</h3>
+              <h3 className="section-title">
+                <i className="fas fa-map-marker-alt"></i> Location Details
+              </h3>
               
               <div className="form-group">
-                <label>Address *</label>
+                <label>Address <span className="required">*</span></label>
                 <textarea
                   name="address"
                   placeholder="Your complete address"
@@ -219,68 +279,102 @@ function TruckRegister() {
                   onChange={handleChange}
                   rows="3"
                   required
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem 1rem',
+                    border: '2px solid #e0e0e0',
+                    borderRadius: '8px',
+                    fontSize: '1rem',
+                    fontFamily: 'inherit',
+                    resize: 'vertical'
+                  }}
                 />
               </div>
 
-              <div className="form-group">
-                <label>City *</label>
-                <input
-                  type="text"
-                  name="city"
-                  placeholder="City"
-                  value={formData.city}
-                  onChange={handleChange}
-                  required
-                />
+              <div className="form-row">
+                <div className="form-group">
+                  <label>City <span className="required">*</span></label>
+                  <input
+                    type="text"
+                    name="city"
+                    placeholder="City"
+                    value={formData.city}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>State <span className="required">*</span></label>
+                  <input
+                    type="text"
+                    name="state"
+                    placeholder="State"
+                    value={formData.state}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
               </div>
 
-              <div className="form-group">
-                <label>State *</label>
-                <input
-                  type="text"
-                  name="state"
-                  placeholder="State"
-                  value={formData.state}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
+              <div className="location-capture">
                 <button
                   type="button"
-                  className="btn-location"
+                  className="btn-location-modern"
                   onClick={handleGetLocation}
                   disabled={fetchingLocation}
                 >
-                  {fetchingLocation ? '📍 Getting Location...' : '📍 Use My Current Location'}
+                  {fetchingLocation ? (
+                    <>
+                      <i className="fas fa-spinner fa-spin"></i> Getting location...
+                    </>
+                  ) : formData.latitude && formData.longitude ? (
+                    <>
+                      <i className="fas fa-check-circle"></i> Location Captured
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-crosshairs"></i> Use My Current Location
+                    </>
+                  )}
                 </button>
                 {formData.latitude && formData.longitude && (
-                  <p className="location-info">
-                    ✅ Location captured: {formData.latitude}, {formData.longitude}
-                  </p>
+                  <div className="location-info">
+                    <i className="fas fa-map-pin"></i>
+                    <span>Lat: {parseFloat(formData.latitude).toFixed(4)}, Long: {parseFloat(formData.longitude).toFixed(4)}</span>
+                  </div>
                 )}
+                <small className="form-hint">Helps us assign nearby delivery routes</small>
               </div>
             </div>
 
-            <button type="submit" className="btn-submit" disabled={loading}>
-              {loading ? 'Registering...' : '🚛 Register as Truck Driver'}
+            <button type="submit" className="btn-submit-modern" disabled={loading}>
+              {loading ? (
+                <>
+                  <i className="fas fa-spinner fa-spin"></i> Registering...
+                </>
+              ) : (
+                <>
+                  <i className="fas fa-truck"></i> Register as Driver
+                </>
+              )}
             </button>
-          </form>
 
-          <div className="auth-footer">
-            <p>
-              Already have an account?{' '}
-              <button onClick={() => navigate('/login/truck')} className="link-button">
-                Login here
-              </button>
-            </p>
-            <button onClick={() => navigate('/')} className="link-button">
-              ← Back to Home
-            </button>
-          </div>
+            <div className="form-footer">
+              <p>
+                Already have an account? 
+                <Link to="/login/truck" className="link-primary"> Sign in here</Link>
+              </p>
+            </div>
+          </form>
         </div>
       </div>
+
+      {/* Font Awesome */}
+      <link 
+        rel="stylesheet" 
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      />
     </div>
   );
 }

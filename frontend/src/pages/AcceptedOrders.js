@@ -1,12 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import api from '../utils/api';
-import './Dashboard.css';
+import './AcceptedOrders.css';
 
 function AcceptedOrders() {
   const navigate = useNavigate();
-  const { t } = useTranslation();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -17,11 +15,6 @@ function AcceptedOrders() {
   const fetchAcceptedOrders = async () => {
     try {
       const response = await api.get('/orders/buyer/accepted-orders');
-      console.log('=== ACCEPTED ORDERS DEBUG ===');
-      console.log('Orders received:', response.data.data);
-      console.log('First order _id:', response.data.data[0]?._id);
-      console.log('First order structure:', response.data.data[0]);
-      console.log('============================');
       setOrders(response.data.data);
     } catch (error) {
       console.error('Error fetching accepted orders:', error);
@@ -31,145 +24,166 @@ function AcceptedOrders() {
   };
 
   const handleProceedToPayment = (orderId) => {
-    console.log('=== PAYMENT NAVIGATION DEBUG ===');
-    console.log('Order ID being passed:', orderId);
-    console.log('Order ID type:', typeof orderId);
-    console.log('Order ID length:', orderId?.length);
-    console.log('Navigation URL:', `/payment/${orderId}`);
-    console.log('================================');
     navigate(`/payment/${orderId}`);
-  };
-
-  const getPaymentButtonText = (order) => {
-    if (order.paymentStatus === 'paid') {
-      return t('order.paymentCompleted');
-    }
-    return t('order.proceedToPayment');
   };
 
   const isPaymentCompleted = (order) => {
     return order.paymentStatus === 'paid';
   };
 
-  return (
-    <div className="dashboard-page">
-      <header className="dashboard-header">
-        <h1>{t('order.acceptedOrdersTitle')}</h1>
-        <button onClick={() => navigate('/buyer/dashboard')} className="btn-secondary">
-          {t('order.backToDashboard')}
-        </button>
-      </header>
+  const handleChatWithFarmer = async (order) => {
+    try {
+      const response = await api.post('/chats/create', {
+        farmerId: order.farmerId?._id || order.farmerId,
+        cropId: order.cropId?._id || order.cropId
+      });
+      const chatId = response.data.data._id;
+      navigate(`/chat/${chatId}`);
+    } catch (error) {
+      console.error('Error creating chat:', error);
+      alert('Unable to start chat. Please try again.');
+    }
+  };
 
-      <div className="dashboard-container">
-        {loading ? (
-          <div className="loading">{t('order.loadingOrders')}</div>
-        ) : orders.length === 0 ? (
-          <div className="no-data">
-            <p>{t('order.noAcceptedOrders')}</p>
-            <button onClick={() => navigate('/marketplace')} className="btn-primary">
-              {t('order.browseCrops')}
-            </button>
+  if (loading) {
+    return (
+      <div className="amazon-orders-page">
+        <div className="loading">Loading orders...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="amazon-orders-page">
+      {/* Header */}
+      <div className="orders-header">
+        <h1>Your Orders</h1>
+      </div>
+
+      {/* Orders List */}
+      <div className="orders-container">
+        {orders.length === 0 ? (
+          <div className="no-orders">
+            <h2>No orders yet</h2>
+            <p>When farmers accept your requests, they'll appear here</p>
+            <button onClick={() => navigate('/marketplace')}>Browse Marketplace</button>
           </div>
         ) : (
-          <div className="orders-list">
-            {orders.map((order) => (
-              <div key={order._id} className="order-card-large">
-                <div className="order-header">
-                  <div>
-                    <h3>{t('order.orderNumber')}{order.orderId}</h3>
-                    <p className="success-message">
-                      {t('order.successMessage')} {new Date(order.farmerResponseDate).toLocaleDateString()}
-                    </p>
+          orders.map((order) => (
+            <div key={order._id} className="order-box">
+              {/* Order Header Bar */}
+              <div className="order-header-bar">
+                <div className="order-header-group">
+                  <div className="header-item">
+                    <span className="header-label">ORDER PLACED</span>
+                    <span className="header-value">
+                      {new Date(order.farmerResponseDate).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                      })}
+                    </span>
                   </div>
-                  <span className="status-badge success">{t('order.acceptedPaymentPending')}</span>
+                  <div className="header-item">
+                    <span className="header-label">TOTAL</span>
+                    <span className="header-value">₹{order.totalAmount}</span>
+                  </div>
+                  <div className="header-item">
+                    <span className="header-label">FARMER</span>
+                    <span className="header-value">{order.farmerName}</span>
+                  </div>
                 </div>
+                <div className="order-header-right">
+                  <span className="header-label">ORDER # {order.orderId}</span>
+                </div>
+              </div>
 
-                <div className="order-body">
-                  <div className="order-info">
-                    <div className="crop-info">
-                      <h4>{t('order.cropDetails')}</h4>
-                      <p><strong>{t('order.cropType')}:</strong> {order.cropType}</p>
-                      <p><strong>{t('order.quantity')}:</strong> {order.quantity} {order.unit}</p>
-                      <p><strong>{t('order.price')}:</strong> ₹{order.pricePerUnit}/{order.unit}</p>
+              {/* Order Content */}
+              <div className="order-content">
+                {/* Left Side - Product Info */}
+                <div className="order-left">
+                  <div className="delivery-status">
+                    {isPaymentCompleted(order) ? (
+                      <h3 className="status-paid">Payment Completed</h3>
+                    ) : (
+                      <h3 className="status-pending">Payment Pending</h3>
+                    )}
+                  </div>
+
+                  <div className="product-info">
+                    <div className="product-image">
+                      <div className="crop-icon">🌾</div>
                     </div>
-
-                    <div className="farmer-info">
-                      <h4>{t('order.farmerDetails')}</h4>
-                      <p><strong>{t('order.farmerName')}:</strong> {order.farmerName}</p>
-                      {order.farmerPhone && <p><strong>{t('order.farmerPhone')}:</strong> {order.farmerPhone}</p>}
+                    <div className="product-details">
+                      <h4>{order.cropType}</h4>
+                      <p className="product-meta">Quantity: {order.quantity} {order.unit}</p>
+                      <p className="product-meta">Price: ₹{order.pricePerUnit}/{order.unit}</p>
                       {order.farmerResponseMessage && (
-                        <div className="farmer-message">
-                          <strong>{t('order.farmerMessage')}:</strong>
-                          <p className="message-text">{order.farmerResponseMessage}</p>
+                        <div className="farmer-note">
+                          <strong>Farmer's Note:</strong> {order.farmerResponseMessage}
                         </div>
                       )}
                     </div>
-
-                    <div className="delivery-info">
-                      <h4>{t('order.deliveryDetails')}</h4>
-                      <p><strong>{t('order.deliveryTypeLabel')}:</strong> {order.deliveryType === 'fpo' ? t('order.fpoStorage') : t('order.directDelivery')}</p>
-                      {order.selectedFPO && (
-                        <>
-                          <p><strong>{t('order.fpoName')}:</strong> {order.selectedFPO.name}</p>
-                          <p><strong>{t('order.location')}:</strong> {order.selectedFPO.location}</p>
-                          <p><strong>{t('order.address')}:</strong> {order.selectedFPO.address}</p>
-                        </>
-                      )}
-                    </div>
-
-                    <div className="price-breakdown">
-                      <h4>{t('order.priceBreakdown')}</h4>
-                      <div className="price-row">
-                        <span>{t('order.cropCost')}:</span>
-                        <span>₹{order.farmerPrice}</span>
-                      </div>
-                      <div className="price-row">
-                        <span>{t('order.transport')}:</span>
-                        <span>₹{order.transportCost}</span>
-                      </div>
-                      <div className="price-row">
-                        <span>{t('order.platformFee')}:</span>
-                        <span>₹{order.platformFee}</span>
-                      </div>
-                      <div className="price-row total">
-                        <span><strong>{t('order.totalAmount')}:</strong></span>
-                        <span><strong>₹{order.totalAmount}</strong></span>
-                      </div>
-                    </div>
                   </div>
 
+                  {/* Action Buttons */}
                   <div className="order-actions">
-                    <button 
-                      className={`btn-large ${isPaymentCompleted(order) ? 'btn-success' : 'btn-primary'}`}
-                      onClick={() => handleProceedToPayment(order._id)}
-                      disabled={isPaymentCompleted(order)}
-                    >
-                      {getPaymentButtonText(order)}
-                    </button>
-                    {isPaymentCompleted(order) && (
+                    {!isPaymentCompleted(order) ? (
                       <button 
-                        className="btn-primary"
+                        className="btn-primary-action"
+                        onClick={() => handleProceedToPayment(order._id)}
+                      >
+                        Complete Payment
+                      </button>
+                    ) : (
+                      <button 
+                        className="btn-secondary-action"
                         onClick={() => navigate(`/track-delivery/${order._id}`)}
                       >
-                        {t('order.trackOrder')}
+                        Track Package
                       </button>
                     )}
+                    <button 
+                      className="btn-secondary-action"
+                      onClick={() => handleChatWithFarmer(order)}
+                    >
+                      Contact Farmer
+                    </button>
                   </div>
                 </div>
 
-                {!isPaymentCompleted(order) && (
-                  <div className="info-banner">
-                    <p>{t('order.completePaymentWarning')}</p>
+                {/* Right Side - Order Details */}
+                <div className="order-right">
+                  <div className="order-summary">
+                    <h4>Order Summary</h4>
+                    <div className="summary-row">
+                      <span>Crop Cost:</span>
+                      <span>₹{order.farmerPrice}</span>
+                    </div>
+                    <div className="summary-row">
+                      <span>Transport:</span>
+                      <span>₹{order.transportCost}</span>
+                    </div>
+                    <div className="summary-row">
+                      <span>Platform Fee:</span>
+                      <span>₹{order.platformFee}</span>
+                    </div>
+                    <div className="summary-row total">
+                      <span>Order Total:</span>
+                      <span>₹{order.totalAmount}</span>
+                    </div>
                   </div>
-                )}
-                {isPaymentCompleted(order) && (
-                  <div className="success-banner">
-                    <p>{t('order.paymentCompletedSuccess')}</p>
-                  </div>
-                )}
+
+                  {order.farmerPhone && (
+                    <div className="contact-info">
+                      <p><strong>Farmer Contact:</strong></p>
+                      <p>{order.farmerPhone}</p>
+                    </div>
+                  )}
+                </div>
               </div>
-            ))}
-          </div>
+            </div>
+          ))
         )}
       </div>
     </div>

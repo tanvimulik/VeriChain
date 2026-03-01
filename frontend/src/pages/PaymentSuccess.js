@@ -64,6 +64,12 @@ function PaymentSuccess() {
 
         <div className="action-buttons">
           <button 
+            className="btn-chat" 
+            onClick={() => navigate('/chats')}
+          >
+            💬 Chat with Farmer
+          </button>
+          <button 
             className="btn-primary" 
             onClick={() => navigate('/buyer/orders')}
           >

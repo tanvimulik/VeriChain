@@ -213,124 +213,173 @@ function PaymentPage() {
   }
 
   return (
-    <div className="payment-page">
-      <header className="payment-header">
-        <div className="header-content">
-          <h1>💳 Complete Payment</h1>
-          <button onClick={() => navigate('/buyer/accepted-orders')} className="back-btn">
-            ← Back
-          </button>
+    <div className="amazon-checkout-page">
+      {/* Amazon-style Header */}
+      <header className="checkout-header">
+        <div className="header-container">
+          <div className="logo-section">
+            <h1 className="checkout-logo">FarmConnect</h1>
+            <span className="checkout-title">Checkout</span>
+          </div>
+          <div className="secure-badge">
+            🔒 Secure Checkout
+          </div>
         </div>
       </header>
 
-      <div className="payment-container">
-        <div className="payment-grid">
-          {/* Order Summary */}
-          <div className="order-summary-card">
-            <h2>📦 Order Summary</h2>
-            
-            <div className="summary-section">
-              <div className="summary-item">
-                <span>Order ID:</span>
-                <span className="value">#{order._id.slice(-8)}</span>
-              </div>
-              <div className="summary-item">
-                <span>Crop:</span>
-                <span className="value">{order.cropType}</span>
-              </div>
-              <div className="summary-item">
-                <span>Quantity:</span>
-                <span className="value">{order.quantity} {order.unit}</span>
-              </div>
-              <div className="summary-item">
-                <span>Farmer:</span>
-                <span className="value">{order.farmerName}</span>
-              </div>
-              <div className="summary-item">
-                <span>Delivery Type:</span>
-                <span className="value">{order.deliveryType === 'fpo' ? 'FPO Storage' : 'Direct'}</span>
-              </div>
-              {order.selectedFPO && (
-                <div className="summary-item">
-                  <span>FPO:</span>
-                  <span className="value">{order.selectedFPO}</span>
-                </div>
-              )}
+      <div className="checkout-container">
+        {/* Left Side - Payment Options */}
+        <div className="checkout-left">
+          <div className="checkout-section">
+            <div className="section-header">
+              <span className="section-number">1</span>
+              <h2>Payment method</h2>
             </div>
+            
+            <div className="section-content">
+              {/* Test Mode Banner */}
+              <div className="test-mode-notice">
+                <div className="test-badge">TEST MODE</div>
+                <p>This is a test payment. No real money will be charged.</p>
+              </div>
 
-            <div className="price-breakdown">
-              <h3>💰 Price Breakdown</h3>
-              <div className="price-item">
-                <span>Crop Cost:</span>
-                <span>₹{order.farmerPrice}</span>
+              {/* Payment Options */}
+              <div className="payment-method-options">
+                <div className="payment-option selected">
+                  <div className="option-header">
+                    <input type="radio" checked readOnly />
+                    <label>Credit or Debit Card / UPI / Net Banking</label>
+                  </div>
+                  <div className="option-body">
+                    <div className="payment-icons">
+                      <span>💳</span>
+                      <span>📱</span>
+                      <span>🏦</span>
+                    </div>
+                    <p className="payment-description">
+                      Secure payment powered by Razorpay. Supports all major cards, UPI, and net banking.
+                    </p>
+                    
+                    {/* Test Credentials */}
+                    <div className="test-credentials-box">
+                      <h4>Test Payment Details</h4>
+                      <div className="credential-item">
+                        <span className="label">Test Card Number:</span>
+                        <span className="value">4111 1111 1111 1111</span>
+                      </div>
+                      <div className="credential-item">
+                        <span className="label">CVV:</span>
+                        <span className="value">Any 3 digits</span>
+                      </div>
+                      <div className="credential-item">
+                        <span className="label">Expiry Date:</span>
+                        <span className="value">Any future date</span>
+                      </div>
+                      <div className="credential-item">
+                        <span className="label">Test UPI ID:</span>
+                        <span className="value">success@razorpay</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="price-item">
-                <span>Transport:</span>
-                <span>₹{order.transportCost}</span>
-              </div>
-              <div className="price-item">
-                <span>Platform Fee:</span>
-                <span>₹{order.platformFee}</span>
-              </div>
-              <div className="price-divider"></div>
-              <div className="price-item total">
-                <span>Total Amount:</span>
-                <span>₹{order.totalAmount}</span>
+
+              {/* Continue Button */}
+              <button 
+                className="continue-btn"
+                onClick={handlePayment}
+                disabled={processing}
+              >
+                {processing ? 'Processing...' : 'Continue to Payment'}
+              </button>
+
+              {/* Security Badges */}
+              <div className="security-badges">
+                <div className="badge-item">
+                  <span>🔒</span>
+                  <span>256-bit SSL</span>
+                </div>
+                <div className="badge-item">
+                  <span>✅</span>
+                  <span>PCI DSS Compliant</span>
+                </div>
+                <div className="badge-item">
+                  <span>🛡️</span>
+                  <span>100% Secure</span>
+                </div>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Payment Methods */}
-          <div className="payment-methods-card">
-            <h2>💳 Payment Method</h2>
-            <p className="subtitle">Secure payment powered by Razorpay</p>
+        {/* Right Side - Order Summary */}
+        <div className="checkout-right">
+          <div className="order-summary-box">
+            <button 
+              className="place-order-btn"
+              onClick={handlePayment}
+              disabled={processing}
+            >
+              {processing ? 'Processing...' : `Place your order`}
+            </button>
 
-            <div className="payment-info-box">
-              <div className="info-icon">🔒</div>
-              <div className="info-text">
-                <h4>Safe & Secure Payment</h4>
-                <p>Your payment information is encrypted and secure</p>
-              </div>
+            <div className="order-summary-notice">
+              <p>By placing your order, you agree to FarmConnect's terms and conditions.</p>
             </div>
 
-            <div className="test-mode-banner">
-              <span className="test-badge">🧪 TEST MODE</span>
-              <p>This is a test payment. No real money will be deducted.</p>
-            </div>
+            <div className="order-summary-divider"></div>
 
-            <div className="payment-options">
-              <div className="payment-option-card">
-                <div className="option-icon">💳</div>
-                <div className="option-details">
-                  <h4>UPI / Cards / Net Banking</h4>
-                  <p>Pay using UPI, Debit/Credit Card, or Net Banking</p>
+            <h3 className="summary-title">Order Summary</h3>
+
+            {/* Order Items */}
+            <div className="order-items">
+              <div className="order-item">
+                <div className="item-image">
+                  <span className="crop-emoji">🌾</span>
+                </div>
+                <div className="item-details">
+                  <h4>{order.cropType}</h4>
+                  <p className="item-quantity">Quantity: {order.quantity} {order.unit}</p>
+                  <p className="item-farmer">From: {order.farmerName}</p>
+                  {order.deliveryType === 'fpo' && order.selectedFPO && (
+                    <p className="item-fpo">FPO: {order.selectedFPO}</p>
+                  )}
                 </div>
               </div>
             </div>
 
-            <button 
-              className="pay-now-btn" 
-              onClick={handlePayment}
-              disabled={processing}
-            >
-              {processing ? '⏳ Processing...' : `💳 Pay ₹${order.totalAmount}`}
-            </button>
+            <div className="order-summary-divider"></div>
 
-            <div className="test-credentials">
-              <h4>🧪 Test Payment Credentials</h4>
-              <div className="test-card">
-                <p><strong>Test Card:</strong> 4111 1111 1111 1111</p>
-                <p><strong>CVV:</strong> Any 3 digits</p>
-                <p><strong>Expiry:</strong> Any future date</p>
-                <p><strong>Test UPI:</strong> success@razorpay</p>
+            {/* Price Breakdown */}
+            <div className="price-details">
+              <div className="price-row">
+                <span>Items:</span>
+                <span>₹{order.farmerPrice}</span>
+              </div>
+              <div className="price-row">
+                <span>Delivery & Transport:</span>
+                <span>₹{order.transportCost}</span>
+              </div>
+              <div className="price-row">
+                <span>Platform Fee:</span>
+                <span>₹{order.platformFee}</span>
               </div>
             </div>
 
-            <div className="security-info">
-              <p>🔒 256-bit SSL Encrypted</p>
-              <p>✅ PCI DSS Compliant</p>
-              <p>🛡️ 100% Safe & Secure</p>
+            <div className="order-summary-divider"></div>
+
+            {/* Order Total */}
+            <div className="order-total">
+              <span className="total-label">Order Total:</span>
+              <span className="total-amount">₹{order.totalAmount}</span>
             </div>
+          </div>
+
+          {/* Additional Info */}
+          <div className="additional-info">
+            <p className="info-link" onClick={() => navigate('/buyer/accepted-orders')}>
+              ← Return to orders
+            </p>
           </div>
         </div>
       </div>
