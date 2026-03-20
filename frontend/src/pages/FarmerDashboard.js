@@ -1,12 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import './Dashboard.css';
+
+// Updated: Professional weather and AI cards with standard sizing
 
 function FarmerDashboard() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [email, setEmail] = useState('');
+  const [weather, setWeather] = useState(null);
+  const [weatherLoading, setWeatherLoading] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState('');
   const farmerName = localStorage.getItem('farmerName') || 'Rajesh Kumar';
 
   const handleLogout = () => {
@@ -23,6 +28,75 @@ function FarmerDashboard() {
       setEmail('');
     }
   };
+
+  // Fetch weather data
+  const fetchWeather = async () => {
+    setWeatherLoading(true);
+    try {
+      // Get user's location
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            const { latitude, longitude } = position.coords;
+            
+            // Fetch weather from backend
+            const response = await fetch(
+              `http://localhost:8000/api/weather/current?lat=${latitude}&lon=${longitude}`
+            );
+            const data = await response.json();
+            setWeather(data);
+
+            // Fetch AI suggestions
+            const token = localStorage.getItem('token');
+            if (token) {
+              const suggestionsResponse = await fetch(
+                `http://localhost:8000/api/weather/farmer-suggestions?temp=${data.temperature}&humidity=${data.humidity}`,
+                {
+                  headers: {
+                    'Authorization': `Bearer ${token}`
+                  }
+                }
+              );
+              const suggestionsData = await suggestionsResponse.json();
+              setAiSuggestions(suggestionsData.suggestion);
+            }
+            
+            setWeatherLoading(false);
+          },
+          (error) => {
+            console.error('Location error:', error);
+            // Fallback to Pune coordinates
+            fetchWeatherByCoords(18.5204, 73.8567);
+          }
+        );
+      } else {
+        // Fallback to Pune coordinates
+        fetchWeatherByCoords(18.5204, 73.8567);
+      }
+    } catch (error) {
+      console.error('Weather fetch error:', error);
+      setWeatherLoading(false);
+    }
+  };
+
+  const fetchWeatherByCoords = async (lat, lon) => {
+    try {
+      const response = await fetch(
+        `http://localhost:8000/api/weather/current?lat=${lat}&lon=${lon}`
+      );
+      const data = await response.json();
+      setWeather(data);
+      setWeatherLoading(false);
+    } catch (error) {
+      console.error('Weather fetch error:', error);
+      setWeatherLoading(false);
+    }
+  };
+
+  // Fetch weather on component mount
+  useEffect(() => {
+    fetchWeather();
+  }, []);
 
   // Dashboard statistics
   const stats = [
@@ -215,6 +289,212 @@ function FarmerDashboard() {
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Weather & AI Suggestions Widget */}
+      <section className="weather-section" key="weather-ai-v2" style={{ 
+        maxWidth: '1200px', 
+        margin: '2rem auto', 
+        padding: '0 1rem' 
+      }}>
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(2, 1fr)', 
+          gap: '1.5rem' 
+        }}>
+          {/* Weather Card */}
+          <div key="weather-card-v2" style={{
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            borderRadius: '12px',
+            padding: '1.75rem',
+            color: 'white',
+            boxShadow: '0 4px 16px rgba(102, 126, 234, 0.25)',
+            minHeight: '320px',
+            maxHeight: '320px',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <i className="fas fa-cloud-sun"></i> Weather Today
+                </h3>
+                {weather && (
+                  <p style={{ margin: '0.25rem 0 0 0', opacity: 0.85, fontSize: '0.85rem' }}>
+                    <i className="fas fa-map-marker-alt"></i> {weather.city}
+                  </p>
+                )}
+              </div>
+              <button 
+                onClick={fetchWeather}
+                disabled={weatherLoading}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '0.4rem 0.8rem',
+                  color: 'white',
+                  cursor: weatherLoading ? 'not-allowed' : 'pointer',
+                  fontSize: '0.8rem',
+                  fontWeight: '500',
+                  transition: 'all 0.2s'
+                }}
+              >
+                <i className={`fas fa-sync-alt ${weatherLoading ? 'fa-spin' : ''}`}></i>
+              </button>
+            </div>
+
+            {/* Content */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              {weatherLoading ? (
+                <div style={{ textAlign: 'center', padding: '1.5rem 0' }}>
+                  <i className="fas fa-spinner fa-spin" style={{ fontSize: '2rem' }}></i>
+                  <p style={{ marginTop: '0.75rem', fontSize: '0.9rem' }}>Loading...</p>
+                </div>
+              ) : weather ? (
+                <div>
+                  {/* Temperature Display */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginBottom: '1.25rem' }}>
+                    <div style={{ fontSize: '3.5rem', lineHeight: 1 }}>
+                      {weather.description?.includes('rain') ? '🌧️' : 
+                       weather.description?.includes('cloud') ? '☁️' : 
+                       weather.description?.includes('clear') ? '☀️' : '🌤️'}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '2.5rem', fontWeight: '700', lineHeight: 1 }}>
+                        {Math.round(weather.temperature)}°C
+                      </div>
+                      <div style={{ fontSize: '0.9rem', opacity: 0.85, textTransform: 'capitalize', marginTop: '0.25rem' }}>
+                        {weather.description || 'N/A'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Weather Details */}
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(3, 1fr)', 
+                    gap: '0.75rem',
+                    background: 'rgba(255, 255, 255, 0.15)',
+                    borderRadius: '8px',
+                    padding: '0.875rem'
+                  }}>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '1.25rem', marginBottom: '0.15rem' }}>💧</div>
+                      <div style={{ fontSize: '1.1rem', fontWeight: '600' }}>{weather.humidity}%</div>
+                      <div style={{ fontSize: '0.7rem', opacity: 0.75, marginTop: '0.1rem' }}>Humidity</div>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '1.25rem', marginBottom: '0.15rem' }}>💨</div>
+                      <div style={{ fontSize: '1.1rem', fontWeight: '600' }}>{weather.windSpeed} m/s</div>
+                      <div style={{ fontSize: '0.7rem', opacity: 0.75, marginTop: '0.1rem' }}>Wind</div>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '1.25rem', marginBottom: '0.15rem' }}>🌡️</div>
+                      <div style={{ fontSize: '1.1rem', fontWeight: '600' }}>{weather.pressure}</div>
+                      <div style={{ fontSize: '0.7rem', opacity: 0.75, marginTop: '0.1rem' }}>Pressure</div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '1.5rem 0' }}>
+                  <div style={{ fontSize: '2rem', marginBottom: '0.75rem' }}>🌤️</div>
+                  <p style={{ margin: 0, fontSize: '0.9rem', marginBottom: '0.75rem' }}>Unable to fetch weather</p>
+                  <button 
+                    onClick={fetchWeather}
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.2)',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '0.5rem 1rem',
+                      color: 'white',
+                      cursor: 'pointer',
+                      fontSize: '0.85rem'
+                    }}
+                  >
+                    Try Again
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* AI Suggestions Card */}
+          <div key="ai-card-v2" style={{
+            background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+            borderRadius: '12px',
+            padding: '1.75rem',
+            color: 'white',
+            boxShadow: '0 4px 16px rgba(240, 147, 251, 0.25)',
+            minHeight: '320px',
+            maxHeight: '320px',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            {/* Header */}
+            <div style={{ marginBottom: '1.25rem' }}>
+              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <i className="fas fa-robot"></i> AI Farming Tips
+              </h3>
+            </div>
+            
+            {/* Content */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+              {weatherLoading ? (
+                <div style={{ textAlign: 'center', padding: '1.5rem 0', display: 'flex', flexDirection: 'column', justifyContent: 'center', flex: 1 }}>
+                  <i className="fas fa-spinner fa-spin" style={{ fontSize: '2rem' }}></i>
+                  <p style={{ marginTop: '0.75rem', fontSize: '0.9rem' }}>Generating...</p>
+                </div>
+              ) : aiSuggestions ? (
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.15)',
+                  borderRadius: '8px',
+                  padding: '1.25rem',
+                  lineHeight: '1.55',
+                  fontSize: '0.875rem',
+                  overflowY: 'auto',
+                  flex: 1
+                }}>
+                  <div style={{ whiteSpace: 'pre-line' }}>
+                    {aiSuggestions}
+                  </div>
+                </div>
+              ) : (
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.15)',
+                  borderRadius: '8px',
+                  padding: '1.25rem',
+                  textAlign: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  flex: 1
+                }}>
+                  <div style={{ fontSize: '2rem', marginBottom: '0.75rem' }}>🤖</div>
+                  <p style={{ margin: '0 0 0.75rem 0', lineHeight: '1.5', fontSize: '0.875rem' }}>
+                    AI-powered farming suggestions based on weather and your crops
+                  </p>
+                  <button 
+                    onClick={fetchWeather}
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.2)',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '0.5rem 1rem',
+                      color: 'white',
+                      cursor: 'pointer',
+                      fontSize: '0.85rem',
+                      margin: '0 auto'
+                    }}
+                  >
+                    Get Suggestions
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </section>
 

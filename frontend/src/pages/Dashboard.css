@@ -1,4 +1,4 @@
-/* Modern E-commerce Dashboard Styles */
+/* Modern E-commerce Dashboard Styles - v2.0 Professional */
 .ecommerce-dashboard {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background-color: #F5F7FA;
@@ -84,12 +84,13 @@
   color: #f44336;
 }
 
-/* Hero Section */
+/* Hero Section - Compact Professional Version */
 .hero-section {
   background: linear-gradient(135deg, #4CAF50, #8BC34A, #4CAF50);
-  padding: 4rem 2rem;
+  padding: 3rem 2rem !important;
   position: relative;
   overflow: hidden;
+  min-height: auto !important;
 }
 
 .hero-content {
@@ -98,21 +99,23 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 2rem;
+  gap: 1.5rem;
+  min-height: auto !important;
 }
 
 .hero-text h1 {
-  font-size: 3rem;
+  font-size: 2.15rem !important;
   font-weight: 700;
   color: white;
-  margin-bottom: 1rem;
+  margin-bottom: 0.85rem !important;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+  line-height: 1.2 !important;
 }
 
 .hero-text p {
-  font-size: 1.25rem;
+  font-size: 1.1rem !important;
   color: rgba(255, 255, 255, 0.9);
-  margin-bottom: 2rem;
+  margin-bottom: 1.35rem !important;
   font-weight: 400;
 }
 
@@ -120,9 +123,9 @@
   background: white;
   color: #2E7D32;
   border: none;
-  padding: 1rem 2rem;
+  padding: 0.7rem 1.4rem !important;
   border-radius: 8px;
-  font-size: 1.1rem;
+  font-size: 0.95rem !important;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -139,13 +142,13 @@
 
 .hero-image {
   position: relative;
-  width: 300px;
-  height: 200px;
+  width: 220px !important;
+  height: 140px !important;
 }
 
 .floating-emoji {
   position: absolute;
-  font-size: 3rem;
+  font-size: 2.5rem !important;
   animation: float 3s ease-in-out infinite;
 }
 
@@ -169,10 +172,10 @@
   50% { transform: translateY(-20px); }
 }
 
-/* Email Signup */
+/* Email Signup - Compact */
 .email-signup {
   background: white;
-  padding: 3rem 2rem;
+  padding: 2rem 2rem !important;
   text-align: center;
   border-bottom: 1px solid #E0E0E0;
 }

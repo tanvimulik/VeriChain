@@ -12,6 +12,22 @@ exports.getCurrentWeather = async (req, res) => {
       return res.status(400).json({ error: 'Latitude and longitude required' });
     }
 
+    // Check if API key is configured
+    if (!OPENWEATHER_API_KEY || OPENWEATHER_API_KEY === 'your_openweather_api_key_here') {
+      console.log('OpenWeather API key not configured, returning mock data');
+      
+      // Return mock weather data
+      return res.json({
+        temperature: 28,
+        humidity: 65,
+        pressure: 1013,
+        windSpeed: 3.5,
+        description: 'partly cloudy',
+        city: 'Pune',
+        mock: true
+      });
+    }
+
     const response = await axios.get(`${OPENWEATHER_BASE_URL}/weather`, {
       params: {
         lat,
@@ -29,11 +45,23 @@ exports.getCurrentWeather = async (req, res) => {
       pressure: data.main.pressure,
       windSpeed: data.wind.speed,
       description: data.weather[0].description,
-      city: data.name
+      city: data.name,
+      mock: false
     });
 
   } catch (error) {
     console.error('Weather fetch error:', error.message);
-    res.status(500).json({ error: 'Failed to fetch weather' });
+    
+    // Return mock data on error
+    res.json({
+      temperature: 28,
+      humidity: 65,
+      pressure: 1013,
+      windSpeed: 3.5,
+      description: 'partly cloudy',
+      city: 'Pune',
+      mock: true,
+      error: 'Using mock data due to API error'
+    });
   }
 };

@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
 import './i18n/config'; // Initialize i18n
+import ChatbotWidget from './components/Chatbot/ChatbotWidget';
 
 // Pages
 import LandingPage from './pages/LandingPage';
@@ -121,6 +122,7 @@ function App() {
         {/* Logistics */}
         <Route path="/logistics/dashboard" element={<LogisticsDashboard />} />
       </Routes>
+      <ChatbotWidget/>
     </Router>
   );
 }
